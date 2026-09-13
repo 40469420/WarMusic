@@ -1,0 +1,167 @@
+<Window x:Class="WarMusic.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="WarMusic · 1.0.0" Icon="Assets/WarMusic.ico" Width="1360" Height="880" MinWidth="1120" MinHeight="760" Background="{StaticResource Bg}" Foreground="#E5E9DF" FontFamily="Segoe UI" FontSize="13" WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="OnDrop">
+ <Window.Resources>
+  <Style x:Key="Caption" TargetType="TextBlock"><Setter Property="Foreground" Value="#939E8D"/><Setter Property="FontSize" Value="11"/><Setter Property="Margin" Value="0,0,0,10"/></Style>
+  <Style x:Key="QuietButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="#343D30"/><Setter Property="BorderThickness" Value="1"/></Style>
+  <Style x:Key="Section" TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}"><Setter Property="Foreground" Value="#B6C0AE"/><Setter Property="Margin" Value="0,16,0,0"/></Style>
+ </Window.Resources>
+ <Grid><Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition/><RowDefinition Height="78"/><RowDefinition Height="28"/></Grid.RowDefinitions>
+  <Border BorderBrush="#293025" BorderThickness="0,0,0,1" Padding="26,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Image Source="Assets/WarMusic.png" Width="36" Height="36" Margin="0,0,12,0" AutomationProperties.Name="WarMusic logo"/><Border Width="4" Height="24" Background="{StaticResource Accent}" Margin="0,0,12,0"/><TextBlock Text="WARMUSIC" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/></StackPanel>
+   <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><ComboBox Width="150" ItemsSource="{Binding Profiles}" SelectedItem="{Binding Profile}" DisplayMemberPath="Name" Margin="0" AutomationProperties.Name="Active loadout"/><Ellipse Width="6" Height="6" Fill="{Binding SessionColor}" Margin="20,0,8,0"/><TextBlock Text="{Binding SessionLabel}" Foreground="#A7B29D" VerticalAlignment="Center"/></StackPanel>
+   <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+    <Button Content="Overlay" Command="{Binding OverlayCommand}" Style="{StaticResource QuietButton}" Margin="0,0,8,0"/>
+    <Button Content="Connect" Command="{Binding ReadyCommand}" Background="#AABA85" Foreground="#10150D" Margin="0,0,8,0" ToolTip="Connect your saved devices and music app. Music starts muted."><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsRouting}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+    <Button Content="{Binding MusicButtonLabel}" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanTransmitControl}" Background="#AABA85" Foreground="#10150D" Margin="0,0,8,0"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsRouting}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+    <Button Content="Cut music" Command="{Binding PanicCommand}" Style="{StaticResource QuietButton}" Foreground="#D8A69A" Margin="0" ToolTip="Panic: immediately cut music, keep voice. Ctrl+Shift+F12"/>
+   </StackPanel>
+  </Grid></Border>
+  <TabControl Grid.Row="1" SelectedIndex="{Binding Tab}" TabStripPlacement="Left" Padding="0" Background="{StaticResource Bg}">
+   <TabItem Header="Soundboard">
+    <Grid Margin="28,24,24,18"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="28"/><ColumnDefinition Width="260"/></Grid.ColumnDefinitions>
+     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Stretch"><Grid MinHeight="600"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <DockPanel Margin="0,0,0,20"><Button DockPanel.Dock="Right" Content="Import sounds" Command="{Binding ImportCommand}" Style="{StaticResource QuietButton}" Margin="12,0,0,0"/><StackPanel><TextBlock Text="Soundboard" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="{Binding LibraryCount}" Foreground="#939E8D" Margin="0,4,0,0"/></StackPanel></DockPanel>
+      <Border Grid.Row="1" BorderBrush="#30382C" BorderThickness="0,0,0,1" Padding="0,0,0,16" Margin="0,0,0,18"><StackPanel>
+       <DockPanel><TextBlock DockPanel.Dock="Right" Text="APPLICATION" Style="{StaticResource Caption}" Margin="12,3,0,0"/><TextBlock Text="{Binding Profile.SourceName}" FontWeight="SemiBold" FontSize="15"/></DockPanel>
+       <TextBlock Text="{Binding SourceState}" Foreground="#939E8D" FontSize="11" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding SourceState}"/>
+       <Expander Header="Change source" Foreground="#AAB69E" Margin="0,10,0,0"><StackPanel Margin="0,8,0,0"><ComboBox ItemsSource="{Binding Applications}" SelectedItem="{Binding SelectedApp}" AutomationProperties.Name="Application audio source"/><WrapPanel><Button Content="Connect source" Command="{Binding ConnectCommand}"/><Button Content="Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource QuietButton}"/><Button Content="Disconnect" Command="{Binding DisconnectCommand}" Style="{StaticResource QuietButton}"/></WrapPanel></StackPanel></Expander>
+      </StackPanel></Border>
+      <Grid Grid.Row="2" Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="160"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox Tag="Search sounds" Text="{Binding Search,UpdateSourceTrigger=PropertyChanged}" Margin="0,0,12,0" ToolTip="Search sounds" AutomationProperties.Name="Search sounds"/><ComboBox Grid.Column="1" ItemsSource="{Binding Collections}" SelectedItem="{Binding Collection}" Margin="0" AutomationProperties.Name="Collection filter"/><CheckBox Grid.Column="2" Content="Favorites" IsChecked="{Binding Favorites}" Margin="14,0,0,0" VerticalAlignment="Center"/></Grid>
+      <ListBox Grid.Row="3" x:Name="SoundList" ItemsSource="{Binding Library}" SelectedItem="{Binding SelectedSound}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Sound library"><ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
+       <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,0,10,10"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="Selection" BorderBrush="Transparent" BorderThickness="1" CornerRadius="7"><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property="IsSelected" Value="True"><Setter TargetName="Selection" Property="BorderBrush" Value="#AABA85"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style></ListBox.ItemContainerStyle>
+       <ListBox.ItemTemplate><DataTemplate><Button Width="164" Height="116" Margin="0" Padding="0" Background="#1C221C" Command="{Binding DataContext.TileCommand,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" HorizontalContentAlignment="Stretch" ToolTip="Play sound. Right-click for preview or editing.">
+        <Button.ContextMenu><ContextMenu DataContext="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource Self}}"><MenuItem Header="Select / edit" Click="SelectTile"/><MenuItem Header="Preview privately" Click="PreviewTile"/><MenuItem Header="Add to queue" Click="QueueTile"/></ContextMenu></Button.ContextMenu>
+        <Grid Margin="14"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding Hotkey}" FontSize="10" Foreground="#939E8D"/><Border Background="{Binding Color}" Width="20" Height="3" HorizontalAlignment="Left" VerticalAlignment="Center"/></DockPanel><TextBlock Grid.Row="1" Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" MaxHeight="40" VerticalAlignment="Center"/><TextBlock Grid.Row="2" Text="{Binding Collection}" FontSize="10" Foreground="#939E8D"/></Grid>
+       </Button></DataTemplate></ListBox.ItemTemplate>
+      </ListBox>
+      <StackPanel Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Center"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasItems,ElementName=SoundList}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style><TextBlock Text="Your soundboard, ready to fill." FontSize="19" Foreground="#BBC5B2" HorizontalAlignment="Center"/><TextBlock Text="Drop WAV or MP3 files here." Foreground="#939E8D" Margin="0,9,0,0" HorizontalAlignment="Center"/></StackPanel>
+      <StackPanel Grid.Row="4">
+       <Expander Header="Selected sound" x:Name="SoundEditor" Expanded="EditorExpanded" Style="{StaticResource Section}"><ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,12,0,0"><TextBox Text="{Binding SelectedSound.Name,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Sound display name"/><WrapPanel><Button Content="Preview" Command="{Binding PreviewCommand}"/><Button Content="Queue" Command="{Binding QueueCommand}"/><Button Content="Favorite" Command="{Binding FavoriteCommand}" Style="{StaticResource QuietButton}"/><Button Content="Color" Command="{Binding ColorCommand}" Style="{StaticResource QuietButton}"/></WrapPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Collection" Style="{StaticResource Caption}"/><TextBox Text="{Binding NewCollection,UpdateSourceTrigger=PropertyChanged}"/><Button Content="Move" Command="{Binding AssignCollectionCommand}"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Hotkey" Style="{StaticResource Caption}"/><TextBox Text="{Binding SelectedSound.Hotkey}"/><Button Content="Apply hotkeys" Command="{Binding HotkeyCommand}"/></StackPanel></Grid><Button Content="Remove from library" Command="{Binding RemoveCommand}" Style="{StaticResource QuietButton}" HorizontalAlignment="Left"/></StackPanel></ScrollViewer></Expander>
+       <Expander Header="Queue" x:Name="QueuePanel" Expanded="QueueExpanded" Style="{StaticResource Section}"><StackPanel Margin="0,10,0,0"><ListBox Height="90" ItemsSource="{Binding Queue}" SelectedItem="{Binding SelectedQueued}" DisplayMemberPath="Name" Background="#191E19" Foreground="#E6EBDC" BorderThickness="0"/><WrapPanel Margin="0,8,0,0"><Button Content="Play next" Command="{Binding NextCommand}"/><Button Content="Remove" Command="{Binding RemoveQueueCommand}" Style="{StaticResource QuietButton}"/></WrapPanel></StackPanel></Expander>
+      </StackPanel>
+     </Grid>
+     </ScrollViewer><Border Grid.Column="2" BorderBrush="#30382C" BorderThickness="1,0,0,0" Padding="24,0,0,0"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+      <TextBlock Text="Mixer" FontSize="18" FontWeight="SemiBold" Margin="0,3,0,28"/>
+      <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding MicLabel}" Foreground="#AABA85"/><TextBlock Text="Microphone"/></DockPanel><Slider Minimum="0" Maximum="2" Value="{Binding Profile.MicGain}" AutomationProperties.Name="Microphone gain"/><ProgressBar Value="{Binding MicMeter,Mode=OneWay}" Margin="0,0,0,24"/>
+      <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding GameMusicLabel}" Foreground="#AABA85"/><TextBlock Text="Music to game" FontWeight="SemiBold"/></DockPanel><Slider Minimum="0" Maximum="100" Value="{Binding GameMusicVolume}" AutomationProperties.Name="Game music volume percent"/><ProgressBar Value="{Binding SentMusicMeter,Mode=OneWay}" Foreground="{Binding MusicLevelColor}"/><TextBlock Text="{Binding MusicLevelStatus}" Foreground="{Binding MusicLevelColor}" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap"/>
+      <Expander Header="Boost &amp; calibration" Style="{StaticResource Section}"><StackPanel Margin="0,12,0,0"><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding BoostLabel}"/><TextBlock Text="Source boost"/></DockPanel><Slider Minimum="-24" Maximum="24" Value="{Binding MusicBoost}" TickFrequency="6" IsSnapToTickEnabled="True"/><Button Content="Measure music" Command="{Binding MeasureCommand}"/><Button Content="Apply suggestion" Command="{Binding ApplyLevelCommand}" IsEnabled="{Binding CanApplyLevel}"/><TextBlock Text="{Binding LevelStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#939E8D"/></StackPanel></Expander>
+      <Separator Margin="0,22"/>
+      <DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding ClipLabel}" Foreground="#939E8D"/><TextBlock Text="Local sounds"/></DockPanel><Slider Minimum="0" Maximum="2" Value="{Binding Profile.ClipGain}" AutomationProperties.Name="Local sound gain"/>
+      <DockPanel Margin="0,12,0,0"><TextBlock DockPanel.Dock="Right" Text="{Binding MonitorLabel}" Foreground="#939E8D"/><TextBlock Text="Headphones"/></DockPanel><Slider Minimum="0" Maximum="1" Value="{Binding Profile.MonitorGain}" AutomationProperties.Name="Monitor volume"/>
+      <CheckBox Content="Voice ducking" IsChecked="{Binding Profile.DuckEnabled}" Margin="0,18,0,0" ToolTip="Automatically lower music while you speak."/>
+      <Expander Header="Fades" Style="{StaticResource Section}"><StackPanel Margin="0,10,0,0"><TextBlock Text="{Binding FadeLabel}" Foreground="#939E8D"/><Slider Minimum="0.5" Maximum="10" Value="{Binding FadeSeconds}" TickFrequency="0.5" IsSnapToTickEnabled="True"/><WrapPanel><Button Content="Fade in" Command="{Binding FadeInCommand}"/><Button Content="Fade out" Command="{Binding FadeOutCommand}"/></WrapPanel></StackPanel></Expander>
+      <TextBlock Text="OUTPUT" Style="{StaticResource Caption}" Margin="0,28,0,10"/><ProgressBar Value="{Binding OutputMeter,Mode=OneWay}"/><TextBlock Text="{Binding Limiter}" FontSize="10" Foreground="#939E8D" Margin="0,8,0,0"/>
+     </StackPanel></ScrollViewer></Border>
+    </Grid>
+   </TabItem>   <TabItem Header="Audio">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="28,24,24,18"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="24"/><ColumnDefinition/></Grid.ColumnDefinitions>
+     <StackPanel>
+      <TextBlock Text="Audio devices" FontSize="20" FontWeight="SemiBold"/><TextBlock Text="Saved devices are used by Connect." Foreground="#A0AC94" Margin="0,5,0,22"/>
+      <TextBlock Text="1   Physical microphone" FontWeight="SemiBold"/><ComboBox ItemsSource="{Binding Microphones}" SelectedItem="{Binding SelectedMic}" AutomationProperties.Name="Physical microphone"/>
+      <TextBlock Text="2   Your headphones" FontWeight="SemiBold"/><ComboBox ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedMonitor}" AutomationProperties.Name="Headphone output"/>
+      <TextBlock Text="3   Virtual cable playback endpoint" FontWeight="SemiBold"/><ComboBox ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedCable}" AutomationProperties.Name="Virtual cable playback output"/>
+      <TextBlock Text="WarMusic → CABLE Input. Game microphone → CABLE Output." TextWrapping="Wrap" Foreground="#A0AC94" Margin="0,0,0,14"/>
+      <WrapPanel><Button Content="Refresh devices" Command="{Binding RefreshCommand}"/><Button Content="Get VB-CABLE" Command="{Binding CableCommand}"/></WrapPanel>
+      <TextBlock Text="Install a virtual cable first if it is missing." TextWrapping="Wrap" FontSize="12" Foreground="#A0AC94" Margin="0,4,0,20"/>
+      <WrapPanel><Button Content="Start microphone route" Command="{Binding RouteCommand}" Background="#566737"/><Button Content="Headphones only" Command="{Binding PreviewStartCommand}"/><Button Content="Stop all audio" Command="{Binding StopRouteCommand}"/></WrapPanel>
+      <TextBlock Text="{Binding RouteStatus}" Foreground="{StaticResource Accent}" Margin="0,8,0,20"/>
+      <TextBlock Text="4   Connect your music application" FontWeight="SemiBold"/><TextBlock Text="Choose a player under Change source on the Soundboard." TextWrapping="Wrap" Foreground="#A0AC94" Margin="0,8,0,15"/>
+      <TextBlock Text="5   Choose the cable microphone in your game" FontWeight="SemiBold"/><TextBlock Text="Choose CABLE Output in the game. Its push-to-talk still applies." TextWrapping="Wrap" Foreground="#A0AC94" Margin="0,8,0,20"/>
+     </StackPanel>
+     <StackPanel Grid.Column="2">
+      <Border Background="{StaticResource Panel}" CornerRadius="8" Padding="16" Margin="0,0,0,14"><StackPanel>
+       <TextBlock Text="Listen to your microphone" FontSize="20" FontWeight="SemiBold"/>
+       <TextBlock Text="Private microphone listening. Use headphones." TextWrapping="Wrap" Foreground="#A0AC94" Margin="0,8,0,10"/>
+       <CheckBox Content="Listen live" IsChecked="{Binding LiveMic}" AutomationProperties.Name="Live microphone monitoring"/>
+       <Grid Margin="0,6,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="Listening level" VerticalAlignment="Center" Margin="0,0,14,0"/><Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding LiveMicLevel}" Margin="0,6" AutomationProperties.Name="Live microphone listening volume"/></Grid>
+       <ProgressBar Value="{Binding MicMeter,Mode=OneWay}" Margin="0,8,0,8"/>
+       <TextBlock Text="{Binding LiveMicStatus}" Foreground="{StaticResource Accent}" FontSize="12"/>
+      </StackPanel></Border>
+      <Border Background="{StaticResource Panel}" CornerRadius="8" Padding="20"><StackPanel>
+       <TextBlock Text="Hear the outgoing mix" FontSize="20" FontWeight="SemiBold"/>
+       <TextBlock Text="10-second test of voice and local sounds. Application music is excluded." TextWrapping="Wrap" Foreground="#A0AC94" Margin="0,10,0,16"/>
+       <WrapPanel><Button Content="Record test" Command="{Binding RecordCommand}"/><Button Content="Finish" Command="{Binding EndRecordCommand}"/><Button Content="Listen privately" Command="{Binding PreviewTestCommand}"/><Button Content="Delete test" Command="{Binding DeleteTestCommand}"/></WrapPanel>
+       <TextBlock Text="{Binding TestStatus}" Foreground="{StaticResource Accent}" Margin="0,10,0,0"/>
+      </StackPanel></Border>
+      <TextBlock Text="Avoid hearing music twice" FontSize="20" FontWeight="SemiBold" Margin="0,25,0,10"/>
+      <TextBlock Text="Application monitoring is off by default to avoid duplicate playback." TextWrapping="Wrap" Foreground="#A0AC94"/>
+      <Expander Header="Advanced: independent application monitoring" Foreground="#E6EBDC" Margin="0,18,0,15"><StackPanel Margin="0,12,0,0">
+       <TextBlock Text="For a separate listening level, manually send the player to an unused, inaudible playback endpoint in Windows Volume mixer, then enable monitoring below. Use a separate endpoint—not the cable that carries the game mix. Do not mute the player; capture may become silent. WarMusic does not change this routing for you." TextWrapping="Wrap" Foreground="#A0AC94"/>
+       <Button Content="Open Windows Volume mixer" Command="{Binding WindowsCommand}" Margin="0,12,0,8"/>
+       <CheckBox Content="Monitor captured application in headphones" IsChecked="{Binding Profile.MonitorApplication}"/>
+      </StackPanel></Expander>
+      <Button Content="Open full setup guide" Command="{Binding HelpCommand}"/>
+     </StackPanel>
+    </Grid></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="28,24,24,18"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="24"/><ColumnDefinition/></Grid.ColumnDefinitions>
+     <StackPanel>
+      <TextBlock Text="Voice &amp; ducking" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15"/>
+      <CheckBox Content="Enable automatic music ducking" IsChecked="{Binding Profile.DuckEnabled}"/>
+      <ComboBox SelectedIndex="{Binding Profile.DuckMode}" AutomationProperties.Name="Ducking trigger"><ComboBoxItem Content="Voice detection"/><ComboBoxItem Content="Comms key"/><ComboBoxItem Content="Voice or comms key"/></ComboBox>
+      <TextBlock Text="Voice threshold (dBFS)"/><Slider Minimum="-65" Maximum="-10" Value="{Binding Profile.ThresholdDb}" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip="{Binding Profile.ThresholdDb}" AutomationProperties.Name="Voice threshold"/>
+      <TextBlock Text="Music reduction (dB)"/><Slider Minimum="0" Maximum="40" Value="{Binding Profile.ReductionDb}" TickFrequency="1" IsSnapToTickEnabled="True" ToolTip="{Binding Profile.ReductionDb}" AutomationProperties.Name="Ducking reduction"/>
+      <Expander Header="Envelope timing" Foreground="#E6EBDC" Margin="0,5,0,10"><StackPanel>
+       <TextBlock Text="Attack (milliseconds)" Margin="0,10,0,0"/><Slider Minimum="1" Maximum="500" Value="{Binding Profile.AttackMs}" ToolTip="{Binding Profile.AttackMs}" AutomationProperties.Name="Ducking attack"/>
+       <TextBlock Text="Hold (milliseconds)"/><Slider Minimum="0" Maximum="2000" Value="{Binding Profile.HoldMs}" ToolTip="{Binding Profile.HoldMs}" AutomationProperties.Name="Ducking hold"/>
+       <TextBlock Text="Release (milliseconds)"/><Slider Minimum="10" Maximum="3000" Value="{Binding Profile.ReleaseMs}" ToolTip="{Binding Profile.ReleaseMs}" AutomationProperties.Name="Ducking release"/>
+      </StackPanel></Expander>
+      <CheckBox Content="Lower music under local clips" IsChecked="{Binding Profile.ClipDucking}"/>
+      <CheckBox Content="Also duck WarMusic headphone monitoring" IsChecked="{Binding Profile.DuckMonitor}"/>
+      <CheckBox Content="Match local clip volume (RMS, capped gain)" IsChecked="{Binding Profile.Normalize}"/>
+      <TextBlock Text="Volume matching applies to local files." TextWrapping="Wrap" FontSize="12" Foreground="#A0AC94"/>
+      <TextBlock Text="Music transmission mode" FontWeight="SemiBold" Margin="0,20,0,0"/>
+      <ComboBox SelectedIndex="{Binding Profile.TransmitMode}" AutomationProperties.Name="Transmission mode"><ComboBoxItem Content="Toggle to transmit"/><ComboBoxItem Content="Hold to transmit"/></ComboBox>
+      <TextBlock Text="Comms key (single key, e.g. CapsLock)"/><TextBox Text="{Binding Profile.CommsKey}" AutomationProperties.Name="Comms key"/>
+      <TextBlock Text="Hold-to-transmit key (e.g. F8)"/><TextBox Text="{Binding Profile.HoldKey}" AutomationProperties.Name="Hold music key"/>
+     </StackPanel>
+     <StackPanel Grid.Column="2">
+      <TextBlock Text="Global controls" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,18"/>
+      <TextBlock Text="Panic stop"/><TextBox Text="{Binding Profile.PanicKey}" AutomationProperties.Name="Panic hotkey"/>
+      <TextBlock Text="Toggle music"/><TextBox Text="{Binding Profile.ToggleKey}" AutomationProperties.Name="Toggle music hotkey"/>
+      <TextBlock Text="Pause / resume local playback"/><TextBox Text="{Binding Profile.PlayKey}" AutomationProperties.Name="Playback hotkey"/>
+      <Button Content="Apply hotkeys" Command="{Binding HotkeyCommand}"/><TextBlock Text="{Binding HotkeyState}" TextWrapping="Wrap" Foreground="#B8CE79" FontSize="12" Margin="0,5,0,20"/>
+      <TextBlock Text="Save a loadout" FontSize="20" FontWeight="SemiBold" Margin="0,10,0,10"/>
+      <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding Profile}" DisplayMemberPath="Name" AutomationProperties.Name="Loadout settings"/>
+      <TextBlock Text="New loadout name"/><TextBox Text="{Binding ProfileName,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="New loadout name"/>
+      <Button Content="Save current as new loadout" Command="{Binding SaveProfileCommand}"/>
+      <TextBlock Text="Switching loadouts stops audio. Your sound library is shared." TextWrapping="Wrap" Foreground="#A0AC94" FontSize="12" Margin="0,8,0,20"/>
+      <Button Content="Save all settings" Command="{Binding SaveCommand}" Background="#566737"/>
+     </StackPanel>
+    </Grid></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Preferences"><ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="32,24"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="40"/><ColumnDefinition/></Grid.ColumnDefinitions>
+    <StackPanel><TextBlock Text="Preferences" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,30"/>
+     <TextBlock Text="CONNECTION" Style="{StaticResource Caption}"/><CheckBox Content="Reconnect automatically" IsChecked="{Binding AutoReconnect}"/><TextBlock Text="Restored connections keep music muted." Foreground="#939E8D" FontSize="12" Margin="0,6,0,28"/>
+     <TextBlock Text="WINDOW BEHAVIOR" Style="{StaticResource Caption}"/><CheckBox Content="Close to tray" IsChecked="{Binding CloseToTray}"/><CheckBox Content="Start minimized" IsChecked="{Binding StartMinimized}"/><CheckBox Content="Launch at Windows sign-in" IsChecked="{Binding StartWithWindows}"/>
+     <TextBlock Text="Audio stays off at startup. Exit from the tray to stop WarMusic completely." TextWrapping="Wrap" Foreground="#939E8D" FontSize="12" Margin="0,12,0,0"/>
+    </StackPanel>
+    <StackPanel Grid.Column="2" Margin="0,64,0,0"><TextBlock Text="LIBRARY BACKUP" Style="{StaticResource Caption}"/><TextBlock Text="Take your sounds and loadouts with you." FontSize="16" Margin="0,0,0,16"/><WrapPanel><Button Content="Export" Command="{Binding ExportCommand}"/><Button Content="Restore" Command="{Binding RestoreCommand}" Style="{StaticResource QuietButton}"/></WrapPanel><TextBlock Text="Restore adds to your library. Existing sounds stay intact." TextWrapping="Wrap" Foreground="#939E8D" FontSize="12" Margin="0,6,0,0"/><Expander Header="Backup details" Style="{StaticResource Section}"><TextBlock Text="Includes local files, colors, collections, hotkeys and loadouts. Duplicate loadouts are renamed. Startup choices stay on this PC. Check devices after moving PCs. Import limit: 2 GB." TextWrapping="Wrap" Foreground="#939E8D" FontSize="12" Margin="0,10,0,0"/></Expander>
+     <TextBlock Text="DESKTOP OVERLAY" Style="{StaticResource Caption}" Margin="0,34,0,10"/><Button Content="Show / hide overlay" Command="{Binding OverlayCommand}" Style="{StaticResource QuietButton}" HorizontalAlignment="Left"/><TextBlock Text="Drag its header to reposition. Best with borderless or windowed games." TextWrapping="Wrap" Foreground="#939E8D" FontSize="12" Margin="0,6,0,24"/>
+     <Button Content="Save settings" Command="{Binding SaveCommand}" HorizontalAlignment="Left"/>
+    </StackPanel>
+   </Grid></ScrollViewer></TabItem>  <TabItem Header="Credits"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="32,24" MaxWidth="760" HorizontalAlignment="Left">
+<TextBlock Text="Credits" FontSize="26" FontWeight="SemiBold" Margin="0,0,0,28"/>
+<TextBlock Text="Made by Machi" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+<TextBlock Foreground="#939E8D" Text="Find me on X" Margin="0,0,0,14"/>
+<TextBlock FontSize="16" Margin="0,0,0,32"><Hyperlink NavigateUri="https://x.com/Machixo" RequestNavigate="OpenCreditLink" Foreground="#B8CE79">@Machixo</Hyperlink><Run Text="    "/><Hyperlink NavigateUri="https://x.com/Wachiko" RequestNavigate="OpenCreditLink" Foreground="#B8CE79">@Wachiko</Hyperlink></TextBlock>
+<Border BorderBrush="#30382C" BorderThickness="0,1,0,0" Padding="0,24,0,0"><StackPanel><TextBlock Text="About this project" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,14"/><TextBlock TextWrapping="Wrap" Foreground="#AAB69E" FontSize="14" LineHeight="24" Text="WarMusic is built and maintained by one guy, with AI help from start to finish. I couldn't find a similar app that had been kept up to date since around 2022, so I decided to make one. AI is what made that possible. Don't like it? Make your own! If this takes off, I'd like to bring in designers for the artwork and other assets. The code will still be maintained mostly with AI help and community pull requests."/></StackPanel></Border>
+</StackPanel></ScrollViewer></TabItem>
+</TabControl>
+  <Border Grid.Row="2" Background="#191E18" BorderBrush="#30382C" BorderThickness="0,1,0,0" Padding="26,12"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="250"/><ColumnDefinition Width="Auto"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding Track}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding TrackDetails}" FontSize="10" Foreground="#939E8D" Margin="0,4,0,0"/></StackPanel>
+   <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0"><Button Content="{Binding PlayLabel}" Command="{Binding TransportPauseCommand}" IsEnabled="{Binding CanTogglePlayback}" Style="{StaticResource QuietButton}" Margin="0,0,6,0"/><Button Content="■" ToolTip="Stop local playback" AutomationProperties.Name="Stop local playback" Command="{Binding StopCommand}" IsEnabled="{Binding LocalTransport}" Style="{StaticResource QuietButton}" Margin="0"/></StackPanel>
+   <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="8,0,24,0"><Slider x:Name="SeekBar" Minimum="0" Maximum="{Binding Duration}" Value="{Binding Position,Mode=OneWay}" IsEnabled="{Binding CanSeek}" PreviewMouseLeftButtonDown="SeekPressed" PreviewMouseLeftButtonUp="SeekReleased" PreviewKeyUp="SeekKeyReleased" Margin="0" AutomationProperties.Name="Playback position"/><TextBlock Text="{Binding TimeLabel}" FontSize="10" Foreground="#939E8D" HorizontalAlignment="Right"/></StackPanel><CheckBox Grid.Column="3" Content="Loop" IsChecked="{Binding Repeat}" IsEnabled="{Binding LocalTransport}" VerticalAlignment="Center"/>
+  </Grid></Border>
+  <TextBlock Grid.Row="3" Text="{Binding Notice}" Foreground="#939E8D" FontSize="10" Margin="26,5,26,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Notice}"/>
+ </Grid>
+</Window>
+
+
+
+
+
+
+
+
+
