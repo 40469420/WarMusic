@@ -60,6 +60,17 @@ public sealed class StorageTests
     }
 
     [Fact]
+    public void EmbeddedSetupGuideSupportsStandaloneExecutable()
+    {
+        using var workspace = new TestWorkspace();
+
+        var path = Store.ResolveSetupGuide();
+
+        Assert.Equal(Path.Combine(Store.Data, "docs", "SETUP.md"), path);
+        Assert.Contains("# Audio setup", File.ReadAllText(path), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void InterruptedLegacyMigrationIsRebuiltFromTheOriginal()
     {
         using var workspace = new TestWorkspace();

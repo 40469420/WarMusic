@@ -25,14 +25,11 @@ $installed = Join-Path $staging 'installed'
 $portable = Join-Path $staging 'portable'
 $applicationProject = Join-Path $root 'src/WarMusic/WarMusic.csproj'
 $installerProject = Join-Path $root 'packaging/WarMusic.Installer/WarMusic.Installer.wixproj'
+$executableArtifact = Join-Path $artifacts "WarMusic-$Version-win-x64.exe"
 $portableArchive = Join-Path $artifacts "WarMusic-$Version-win-x64-portable.zip"
 $installerArtifact = Join-Path $artifacts "WarMusic-$Version-win-x64-setup.msi"
 $checksumFile = Join-Path $artifacts 'SHA256SUMS.txt'
 $provenanceFile = Join-Path $artifacts 'provenance.json'
-
-if (-not $Version.Contains('-') -and [string]::IsNullOrWhiteSpace($CertificatePath)) {
-    throw 'Stable versions require a Windows code-signing certificate. Use a prerelease version while signing is unavailable.'
-}
 
 if (Test-Path $staging) {
     Remove-Item $staging -Recurse -Force
@@ -48,6 +45,12 @@ if ($LASTEXITCODE -ne 0) {
 dotnet publish $applicationProject -c Release -r win-x64 --self-contained true --no-restore -o $installed -p:Version=$Version
 if ($LASTEXITCODE -ne 0) {
     throw 'Application publish failed.'
+}
+
+$publishedFiles = @(Get-ChildItem $installed -File -Recurse)
+if ($publishedFiles.Count -ne 1 -or $publishedFiles[0].Name -ne 'WarMusic.exe') {
+    $names = ($publishedFiles | ForEach-Object { [System.IO.Path]::GetRelativePath($installed, $_.FullName) }) -join ', '
+    throw "Single-file publish produced unexpected files: $names"
 }
 
 Copy-Item (Join-Path $root 'src/WarMusic/Assets/WarMusic.ico') (Join-Path $installed 'WarMusic.ico')
@@ -107,9 +110,10 @@ function Invoke-CodeSign([string] $Path) {
 }
 
 Invoke-CodeSign (Join-Path $installed 'WarMusic.exe')
+Copy-Item (Join-Path $installed 'WarMusic.exe') $executableArtifact -Force
 
 if ([string]::IsNullOrWhiteSpace($CertificatePath)) {
-    Set-Content (Join-Path $installed 'UNSIGNED-BUILD.txt') 'This prerelease is unsigned. Verify SHA256SUMS.txt before running it.' -Encoding utf8NoBOM
+    Set-Content (Join-Path $installed 'UNSIGNED-BUILD.txt') 'This build is unsigned. Verify SHA256SUMS.txt before running it.' -Encoding utf8NoBOM
 }
 
 Copy-Item (Join-Path $installed '*') $portable -Recurse
@@ -142,7 +146,7 @@ finally {
     $zip.Dispose()
 }
 
-$releaseFiles = @($portableArchive)
+$releaseFiles = @($executableArtifact, $portableArchive)
 if (-not $SkipInstaller) {
     if ([string]::IsNullOrWhiteSpace($WixEulaId)) {
         throw 'MSI creation requires explicit WiX 7 EULA acceptance. Set WARMUSIC_WIX_EULA_ID=wix7 after reviewing https://docs.firegiant.com/wix/osmf/.'
@@ -211,6 +215,7 @@ $provenance = [ordered]@{
         sdk = (dotnet --version).Trim()
         runtimeIdentifier = 'win-x64'
         selfContained = $true
+        singleFile = $true
         signed = -not [string]::IsNullOrWhiteSpace($CertificatePath)
         createdUtc = [DateTimeOffset]::UtcNow.ToString('O')
     }

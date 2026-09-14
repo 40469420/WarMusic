@@ -9,6 +9,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <VersionPrefix>1.0.1</VersionPrefix>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
@@ -26,10 +28,9 @@
   <ItemGroup>
     <Resource Include="Assets/WarMusic.png" />
     <Resource Include="Assets/WarMusic.ico" />
+    <EmbeddedResource Include="../../docs/SETUP.md" Link="docs/SETUP.md" LogicalName="WarMusic.Docs.SETUP.md" />
   </ItemGroup>
 </Project>
-
-
 
 
 

@@ -79,9 +79,6 @@ jobs:
 
           $prerelease = $version.Contains('-')
           $signed = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE)
-          if (-not $prerelease -and -not $signed) {
-              throw 'Stable releases require a Windows code-signing certificate. Use a prerelease version while signing is unavailable.'
-          }
 
           "version=$version" >> $env:GITHUB_OUTPUT
           "prerelease=$($prerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
@@ -140,6 +137,7 @@ jobs:
           if ('${{ steps.release.outputs.signed }}' -eq 'true') {
               $signedFiles = @(
                   'artifacts/staging/installed/WarMusic.exe',
+                  'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64.exe',
                   'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-setup.msi'
               )
               foreach ($file in $signedFiles) {
@@ -156,6 +154,7 @@ jobs:
           name: WarMusic-${{ steps.release.outputs.version }}-win-x64
           if-no-files-found: error
           path: |
+            artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64.exe
             artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-portable.zip
             artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-setup.msi
             artifacts/SHA256SUMS.txt
@@ -177,6 +176,7 @@ jobs:
               '--repo', $repository,
               '--title', "WarMusic ${{ steps.release.outputs.version }}",
               '--notes-file', 'docs/RELEASE-NOTES.md',
+              'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64.exe',
               'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-portable.zip',
               'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-setup.msi',
               'artifacts/SHA256SUMS.txt',

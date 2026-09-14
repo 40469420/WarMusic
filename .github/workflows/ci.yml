@@ -20,7 +20,7 @@ env:
 
 jobs:
   build-test-package:
-    name: Windows build, test, and portable package
+    name: Windows build, test, and release packages
     runs-on: windows-latest
     steps:
       - name: Check out source
@@ -59,7 +59,7 @@ jobs:
       - name: Run deterministic tests
         run: dotnet test tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj -c Release --no-restore --logger "trx;LogFileName=unit-tests.trx"
 
-      - name: Build portable package
+      - name: Build release packages
         shell: pwsh
         run: ./build/Build-Release.ps1 -Version 0.0.0-ci -SkipInstaller
 
@@ -71,9 +71,13 @@ jobs:
           path: tests/WarMusic.UnitTests/TestResults/*.trx
           if-no-files-found: warn
 
-      - name: Upload portable package
+      - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:
-          name: warmusic-portable
-          path: artifacts/WarMusic-0.0.0-ci-win-x64-portable.zip
+          name: warmusic-release-packages
+          path: |
+            artifacts/WarMusic-0.0.0-ci-win-x64.exe
+            artifacts/WarMusic-0.0.0-ci-win-x64-portable.zip
+            artifacts/SHA256SUMS.txt
+            artifacts/provenance.json
           if-no-files-found: error

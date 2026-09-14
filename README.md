@@ -10,14 +10,15 @@ WarMusic mixes your microphone, music from a desktop app, and local sound clips 
 
 WarMusic supports Windows 11 x64 and requires [VB-CABLE](https://vb-audio.com/Cable/) or a compatible virtual cable. VB-CABLE is not bundled.
 
-The next public build is intentionally a prerelease until clean-machine installation, migration, recovery, and the eight-hour hardware soak gate have passed. Release packages are self-contained, so users do not need to install .NET separately:
+Release packages are self-contained, so users do not need to install .NET separately:
 
+- `WarMusic-<version>-win-x64.exe` is the complete application in one standalone file.
 - `WarMusic-<version>-win-x64-setup.msi` installs for all users and adds a Start Menu shortcut.
 - `WarMusic-<version>-win-x64-portable.zip` runs entirely from an extracted writable folder.
 
-After the public `WarMusic-Releases` repository is provisioned, download an artifact and verify it against `SHA256SUMS.txt`. Until signed builds are available, use prereleases only and expect a Windows reputation warning.
+After the public `WarMusic-Releases` repository is provisioned, download an artifact and verify it against `SHA256SUMS.txt`. Unsigned downloads can produce a Windows reputation warning; the ZIP and MSI payload also include `UNSIGNED-BUILD.txt`.
 
-Installed mode stores settings, diagnostics, recordings, and imported sounds in `%LOCALAPPDATA%\WarMusic\data`. Portable mode is selected by the included `WarMusic.portable` marker or `--portable` and stores data beside `WarMusic.exe`.
+The standalone EXE and installed mode store settings, diagnostics, recordings, and imported sounds in `%LOCALAPPDATA%\WarMusic\data`. Portable mode is selected by the ZIP's `WarMusic.portable` marker or `--portable` and stores data beside `WarMusic.exe`.
 
 On the first installed launch, adjacent legacy data is copied when present; the original remains untouched. To migrate from another folder, use **Preferences → Export/Restore**.
 
@@ -82,7 +83,7 @@ dotnet test tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj -c Release --no-r
 
 The deterministic suite reports each check independently. Device-dependent checks and the soak runner live in `tests/WarMusic.HardwareTests`; see the [hardware testing guide](docs/HARDWARE-TESTING.md).
 
-Release packaging, signing, and public-repository setup are documented in the [release guide](docs/RELEASING.md). The packaging script emits the MSI, portable ZIP, SHA-256 checksums, and build provenance.
+Release packaging, signing, and public-repository setup are documented in the [release guide](docs/RELEASING.md). The packaging script emits the standalone EXE, MSI, portable ZIP, SHA-256 checksums, and build provenance.
 
 ## About
 

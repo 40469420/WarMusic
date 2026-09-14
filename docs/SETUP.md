@@ -18,7 +18,7 @@ Use headphones to prevent feedback. The physical microphone, monitor output, and
 
 ## Storage and migration
 
-- MSI installation: `%LOCALAPPDATA%\WarMusic\data`
+- Standalone EXE or MSI installation: `%LOCALAPPDATA%\WarMusic\data`
 - Portable ZIP or `--portable`: `data` beside `WarMusic.exe`
 
 An installed build copies adjacent legacy data on first launch only when the installed data folder is empty. The old folder is not changed or deleted. For data in any other location, use **Preferences → Export** in the old copy and **Restore** in the new copy.

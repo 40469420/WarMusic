@@ -15,6 +15,7 @@ internal enum StorageMode
 public static class Store
 {
     internal const string PortableMarker = "WarMusic.portable";
+    private const string SetupGuideResource = "WarMusic.Docs.SETUP.md";
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     public static string Root { get; private set; } = "";
@@ -184,6 +185,24 @@ public static class Store
         {
             // Diagnostics must never interrupt audio or shutdown paths.
         }
+    }
+
+    internal static string ResolveSetupGuide()
+    {
+        var adjacent = Path.Combine(ContentRoot, "docs", "SETUP.md");
+        if (File.Exists(adjacent))
+        {
+            return adjacent;
+        }
+
+        var destination = Path.Combine(Data, "docs", "SETUP.md");
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        using var source = typeof(Store).Assembly.GetManifestResourceStream(SetupGuideResource)
+            ?? throw new InvalidOperationException("The embedded setup guide is unavailable.");
+        using var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.Read);
+        source.CopyTo(output);
+        output.Flush(flushToDisk: true);
+        return destination;
     }
 
     private static int ReadSchemaVersion(string json)
