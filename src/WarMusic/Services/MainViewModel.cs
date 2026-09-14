@@ -135,7 +135,7 @@ public sealed partial class MainViewModel : Observable, IDisposable
         SaveCommand = Cmd(() => { Save(); Notice = "Settings saved."; }); SaveProfileCommand = Cmd(CreateProfile); HotkeyCommand = Cmd(() => { RegisterHotkeys(); Save(); });
         RecordCommand = Cmd(() => { Engine.BeginTest(); Notice = "Recording microphone and local sounds only. Application music keeps routing and is excluded from this recording."; });
         EndRecordCommand = Cmd(() => Engine.EndTest()); PreviewTestCommand = Cmd(() => Engine.PreviewTest()); DeleteTestCommand = Cmd(() => { Engine.StopLocal(); Engine.DeleteTest(); var path = Path.Combine(Store.Data, "mix-test.wav"); if (File.Exists(path)) File.Delete(path); });
-        HelpCommand = Cmd(() => Open(Path.Combine(Store.ContentRoot, "docs", "SETUP.md"))); CableCommand = Cmd(() => Open("https://vb-audio.com/Cable/")); WindowsCommand = Cmd(() => Open("ms-settings:apps-volume"));
+        HelpCommand = Cmd(() => Open("https://github.com/40469420/WarMusic/blob/main/docs/SETUP.md")); CableCommand = Cmd(() => Open("https://vb-audio.com/Cable/")); WindowsCommand = Cmd(() => Open("ms-settings:apps-volume"));
         InitializeFeatures(); Refresh(); Tab = string.IsNullOrEmpty(Profile.CableId) ? 1 : 0; if (Store.RecoveryMessage != null) Notice = Store.RecoveryMessage;
         timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) }; timer.Tick += (_, _) => Tick(); timer.Start();
 
