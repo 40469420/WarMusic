@@ -2,6 +2,11 @@
 
 WarMusic mixes a physical microphone, one application's audio, and local clips into a game-compatible virtual microphone.
 
+## 1.0.1-rc.1
+
+- Fix a headphone-output crash that dropped the route as soon as Connect started. NAudio's `WaveBuffer` float view is a type-punned `byte[]`; `Array.Copy` rejected it and WASAPI reported "Source array type cannot be assigned to destination array type."
+- Build against any .NET 10 SDK. The previous pin required `10.0.401` and failed on current 10.0.1xx installs.
+
 ## Before installing
 
 - Windows 11 x64 is required.

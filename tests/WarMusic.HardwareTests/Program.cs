@@ -48,6 +48,46 @@ if (args.Contains("--list-devices"))
 {
     HardwareSoak.PrintDevices(); return 0;
 }
+if (args.Contains("--route-smoke"))
+{
+    string Required(string flag)
+    {
+        var index = Array.IndexOf(args, flag);
+        if (index < 0 || index + 1 >= args.Length || args[index + 1].StartsWith('-'))
+        {
+            throw new InvalidOperationException($"Pass {flag} <device-id>.");
+        }
+
+        return args[index + 1];
+    }
+
+    var microphone = Devices.List(DataFlow.Capture).First(device => device.Id == Required("--mic"));
+    var monitor = Devices.List(DataFlow.Render).First(device => device.Id == Required("--monitor"));
+    var cable = Devices.List(DataFlow.Render).First(device => device.Id == Required("--cable"));
+    using var engine = new AudioEngine();
+    string? error = null;
+    engine.Error += message => error = message;
+    engine.Configure(new() { DuckEnabled = false, MicGain = 1, SendGain = 1, MonitorGain = 0, MicrophoneMonitorGain = 0 });
+    engine.Start(new() { MicId = microphone.Id, MonitorId = monitor.Id, CableId = cable.Id }, true);
+    await Task.Delay(4000);
+    var routing = engine.Routing;
+    var running = engine.Running;
+    var health = engine.Health;
+    engine.Stop();
+    Console.WriteLine($"mic={microphone.Name}");
+    Console.WriteLine($"monitor={monitor.Name}");
+    Console.WriteLine($"cable={cable.Name}");
+    Console.WriteLine($"routing={routing} running={running} error={error ?? "(none)"}");
+    Console.WriteLine(health);
+    if (error != null || !routing || !running)
+    {
+        Console.WriteLine("FAIL Headphone route smoke");
+        return 1;
+    }
+
+    Console.WriteLine("PASS Headphone route stayed up for 4 seconds with no render fault");
+    return 0;
+}
 if (args.Contains("--soak-test"))
 {
     return await HardwareSoak.RunAsync(args);
