@@ -2,6 +2,13 @@
 
 WarMusic mixes a physical microphone, one application's audio, and local clips into a game-compatible virtual microphone.
 
+## 1.0.2
+
+- Smaller window and a layout that reflows: the header wraps, and the mixer stacks under the soundboard on a narrow or tall layout.
+- Import a whole folder of WAV and MP3 files, including subfolders. Collections follow the folder names. Import shows progress and can be cancelled.
+- Virtualized sound list so large libraries stay responsive.
+- Credits tab lists testers and collaborators.
+
 ## 1.0.1
 
 - Fix a headphone-output crash that dropped the route as soon as Connect started. NAudio's `WaveBuffer` float view is a type-punned `byte[]`; `Array.Copy` rejected it and WASAPI reported "Source array type cannot be assigned to destination array type."

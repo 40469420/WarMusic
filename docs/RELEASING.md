@@ -24,15 +24,15 @@ An MSI installer exists in `packaging/` but is **not** part of the 1.0.x downloa
 Portable ZIP (unsigned):
 
 ```powershell
-pwsh ./build/Build-Release.ps1 -Version 1.0.1 -SkipInstaller
+pwsh ./build/Build-Release.ps1 -Version 1.0.2 -SkipInstaller
 ```
 
-The script refuses a stable SemVer without a signing certificate. 1.0.0 and 1.0.1 were published unsigned to match the previous public layout; keep that exception explicit when repeating it.
+The script refuses a stable SemVer without a signing certificate. 1.0.0, 1.0.1, and 1.0.2 were published unsigned to match the previous public layout; keep that exception explicit when repeating it.
 
 Standalone EXE (matches the 1.0.x Releases asset):
 
 ```powershell
-dotnet publish src/WarMusic/WarMusic.csproj -c Release -r win-x64 --self-contained true -p:Version=1.0.1 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish src/WarMusic/WarMusic.csproj -c Release -r win-x64 --self-contained true -p:Version=1.0.2 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 Rename the published `WarMusic.exe` to `WarMusic-<version>-win-x64.exe` and include it in `SHA256SUMS.txt` and `provenance.json`.
@@ -56,4 +56,4 @@ For signed builds, set `WARMUSIC_SIGNING_CERTIFICATE_PATH` and `WARMUSIC_SIGNING
 5. The hardware preflight in `docs/HARDWARE-TESTING.md` passes; complete the eight-hour soak before calling a build fully qualified.
 6. `SHA256SUMS.txt` matches every package. Authenticode is valid when a certificate is configured.
 
-Tag the commit as `<version>` (for example `1.0.1`) on `main` and attach the four assets to the GitHub Release. The automated Release workflow still expects a `v*` tag, WiX acceptance, and a distribution-repo token; do not use it until those are actually configured.
+Tag the commit as `<version>` (for example `1.0.2`) on `main` and attach the four assets to the GitHub Release. The automated Release workflow still expects a `v*` tag, WiX acceptance, and a distribution-repo token; do not use it until those are actually configured.

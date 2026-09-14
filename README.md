@@ -27,7 +27,7 @@ Use fades for a gradual change or **Cut music** to silence music immediately whi
 
 ## Build your soundboard
 
-Import WAV and MP3 files, organize them into collections, and assign hotkeys. Search your library, mark favorites, queue clips, or preview a sound privately before playing it.
+Import WAV and MP3 files or a whole folder, organize them into collections, and assign hotkeys. Search your library, mark favorites, queue clips, or preview a sound privately before playing it.
 
 Your local sounds and application music share the same outgoing mix.
 
