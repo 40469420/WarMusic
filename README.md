@@ -60,7 +60,7 @@ WarMusic has no telemetry, automatic updater, or runtime network dependency. See
 
 | Problem | What to check |
 | --- | --- |
-| No music in the game | Check that music is enabled, WarMusic sends to CABLE Input, and the game uses CABLE Output. |
+| No music in the game | Check that music is enabled, WarMusic sends to CABLE Input, and the game uses CABLE Output. Play with audio levels — some games have active voice cancelling to cut out your fan, and -50 dB on your music ain't gonna fly. Jam out. |
 | Music is too quiet | Open **Boost & calibration**, measure the source, and apply the suggested adjustment. |
 | Echo or feedback | Use headphones and keep the headphone output separate from the cable. |
 | Wardogs ignores the cable | Select another microphone in the game, apply it, then select CABLE Output again. This may need repeating each session. |
