@@ -37,6 +37,7 @@ Removing the app does not delete `%LOCALAPPDATA%\WarMusic\data`, so sounds and s
 | Monitor has music, game does not | Music transmission is muted. Enable it after Connect. |
 | Echo or feedback | Use headphones and keep the monitor separate from CABLE Input. |
 | Music is quiet or clips | Run Boost & calibration, apply the suggestion, and watch the limiter indicator. |
+| Bad Audio (Wardogs) | Nothing. Wardogs audio filters are impassable. Apply more boost but don't peak it out — you'll kill everyone's ears and lose more quality doing that. Use Measure music. If it happens in Arma, that's a setup error. Start from 0; worst case contact me on X. |
 | A device or source disappears | Leave automatic recovery enabled. Recovery always returns with music muted. |
 
 WarMusic does not update itself or contact a service. Check the public GitHub Releases page for newer versions.

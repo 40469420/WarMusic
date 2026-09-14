@@ -64,6 +64,7 @@ WarMusic has no telemetry, automatic updater, or runtime network dependency. See
 | Music is too quiet | Open **Boost & calibration**, measure the source, and apply the suggested adjustment. |
 | Echo or feedback | Use headphones and keep the headphone output separate from the cable. |
 | Wardogs ignores the cable | Select another microphone in the game, apply it, then select CABLE Output again. This may need repeating each session. |
+| Bad Audio (Wardogs) | Nothing. Wardogs audio filters are impassable. Apply more boost but don't peak it out — you'll kill everyone's ears and lose more quality doing that. Use Measure music. If it happens in Arma, that's a setup error. Start from 0; worst case contact me on X. |
 
 See the [setup guide](docs/SETUP.md) for detailed routing and troubleshooting.
 
