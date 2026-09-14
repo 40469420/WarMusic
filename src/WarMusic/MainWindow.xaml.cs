@@ -13,7 +13,8 @@ public partial class MainWindow : Window
     static string VersionLabel => typeof(MainWindow).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "development";
     public MainWindow()
     {
-        InitializeComponent(); Title = $"WarMusic · {VersionLabel}"; model = new(); DataContext = model;
+        InitializeComponent();
+        SizeChanged += (_, _) => ApplyResponsiveLayout(); Title = $"WarMusic · {VersionLabel}"; model = new(); DataContext = model;
         Loaded += (_, _) => { var handle = new WindowInteropHelper(this).Handle; WindowTheme.Apply(handle); model.AttachHotkeys(handle); if (!Smoke) { CreateTray(); if (model.StartMinimized) Hide(); } };
         model.OverlayRequested += () => { if (overlay == null) { overlay = new(model); overlay.Closed += (_, _) => overlay = null; overlay.Show(); } else overlay.Close(); };
         Closing += (_, e) => { if (!exiting && (!Smoke || testingTray) && model.CloseToTray) { e.Cancel = true; Hide(); tray?.ShowBalloonTip(2500, "WarMusic is in the tray", "Routing stays active. Right-click the tray icon to open or exit.", System.Windows.Forms.ToolTipIcon.Info); } };
@@ -41,6 +42,22 @@ public partial class MainWindow : Window
     }
     void OpenWindow() { Show(); WindowState = WindowState.Normal; Activate(); }
     protected override void OnSourceInitialized(EventArgs e) { base.OnSourceInitialized(e); WindowTheme.Apply(new WindowInteropHelper(this).Handle); }
+    void ApplyResponsiveLayout()
+    {
+        bool portrait = ActualWidth < 1100;
+        System.Windows.Controls.Grid.SetRow(MixerPanel, portrait ? 1 : 0);
+        System.Windows.Controls.Grid.SetColumn(MixerPanel, portrait ? 0 : 2);
+        MixerColumn.Width = new GridLength(portrait ? 0 : 260);
+        DeskGap.Width = new GridLength(portrait ? 0 : 24);
+        MixerPanel.Height = portrait ? 300 : double.NaN;
+        MixerPanel.Margin = portrait ? new Thickness(0, 16, 0, 0) : new Thickness(0);
+        bool narrow = ActualWidth < 1000;
+        HeaderHeight.Height = new GridLength(narrow ? 120 : 76);
+        System.Windows.Controls.Grid.SetRow(HeaderActions, narrow ? 1 : 0);
+        System.Windows.Controls.Grid.SetColumn(HeaderActions, narrow ? 0 : 2);
+        System.Windows.Controls.Grid.SetColumnSpan(HeaderActions, narrow ? 3 : 1);
+        HeaderActions.Margin = narrow ? new Thickness(0, 0, 0, 10) : new Thickness(0);
+    }
     async void OnDrop(object sender, DragEventArgs e) { if (e.Data.GetData(DataFormats.FileDrop) is string[] files) await model.Import(files); }
     static WarMusic.Models.Sound? ContextSound(object sender) => (sender as System.Windows.Controls.MenuItem)?.DataContext as WarMusic.Models.Sound;
     void EditorExpanded(object sender, RoutedEventArgs e) { if (QueuePanel != null) QueuePanel.IsExpanded = false; }

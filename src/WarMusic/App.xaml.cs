@@ -39,6 +39,14 @@ public partial class App : Application
                     }
                     model.Tab = 0; window.Width = 1120; window.Height = 760; window.SoundEditor.IsExpanded = true; window.UpdateLayout(); await Task.Delay(200);
                     var compact = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32); compact.Render(window); var compactEncoder = new PngBitmapEncoder(); compactEncoder.Frames.Add(BitmapFrame.Create(compact)); using (var compactFile = File.Create(Path.Combine(Store.Root, "docs", "screenshots", "compact-editor.png"))) compactEncoder.Save(compactFile);
+                    window.Width = 860; window.Height = 1200; window.SoundEditor.IsExpanded = false; window.UpdateLayout(); await Task.Delay(200);
+                    var portrait = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32); portrait.Render(window); var portraitEncoder = new PngBitmapEncoder(); portraitEncoder.Frames.Add(BitmapFrame.Create(portrait)); using (var portraitFile = File.Create(Path.Combine(Store.Root, "docs", "screenshots", "portrait.png"))) portraitEncoder.Save(portraitFile);
+                    var importFolder = Path.Combine(Store.Root, "import-fixture", "Nested"); Directory.CreateDirectory(importFolder);
+                    using (var writer = new NAudio.Wave.WaveFileWriter(Path.Combine(importFolder, "clip.wav"), new NAudio.Wave.WaveFormat(48000, 16, 1))) writer.Write(new byte[9600], 0, 9600);
+                    File.WriteAllText(Path.Combine(importFolder, "bad.mp3"), "invalid audio");
+                    var before = model.Sounds.Count; await model.Import([Path.GetDirectoryName(importFolder)!]);
+                    if (model.Sounds.Count != before + 1 || model.Busy || model.ImportProgress != 100) throw new InvalidOperationException("Folder import integration failed.");
+                    model.Collection = "import-fixture"; if (model.Library.Cast<object>().Count() != 1) throw new InvalidOperationException("Parent folder filtering failed.");
                     window.VerifyDesktopFeatures();
                     File.WriteAllText(Path.Combine(Store.Root, "docs", "ui-smoke.txt"), "All five application tabs rendered. Native Windows dark caption color and dark mode verified.");
                     window.Close();

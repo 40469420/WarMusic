@@ -90,6 +90,15 @@ public sealed partial class MainViewModel : Observable, IDisposable
     public ICommand ConnectCommand { get; }
     public ICommand DisconnectCommand { get; }
     public ICommand ImportCommand { get; }
+    public ICommand ImportFolderCommand { get; }
+    public ICommand CancelImportCommand { get; }
+    CancellationTokenSource? importCancellation;
+    double importProgress;
+    public double ImportProgress { get => importProgress; private set => Set(ref importProgress, value); }
+    bool importScanning;
+    public bool ImportScanning { get => importScanning; private set => Set(ref importScanning, value); }
+    string importStatus = "Folders include WAV and MP3 files in all subfolders.";
+    public string ImportStatus { get => importStatus; private set => Set(ref importStatus, value); }
     public ICommand PreviewCommand { get; }
     public ICommand PauseCommand { get; }
     public ICommand StopCommand { get; }
@@ -116,7 +125,7 @@ public sealed partial class MainViewModel : Observable, IDisposable
     {
         Engine = engine ?? new(); settings = Store.Load(); Sounds = new(settings.Sounds); Profiles = new(settings.Profiles); profile = Profiles.FirstOrDefault(p => p.Name == settings.ActiveProfile) ?? Profiles[0]; collection = profile.Collection;
         foreach (var p in Profiles) p.PropertyChanged += ProfileChanged;
-        Library = CollectionViewSource.GetDefaultView(Sounds); Library.Filter = x => x is Sound s && (!Favorites || s.Favorite) && (Collection == "All sounds" || s.Collection == Collection) && (string.IsNullOrWhiteSpace(Search) || s.Name.Contains(Search, StringComparison.OrdinalIgnoreCase));
+        Library = CollectionViewSource.GetDefaultView(Sounds); Library.Filter = x => x is Sound s && (!Favorites || s.Favorite) && (Collection == "All sounds" || s.Collection == Collection || s.Collection.StartsWith(Collection + "/", StringComparison.Ordinal)) && (string.IsNullOrWhiteSpace(Search) || s.Name.Contains(Search, StringComparison.OrdinalIgnoreCase));
         Library.SortDescriptions.Add(new(nameof(Sound.Name), ListSortDirection.Ascending));
         foreach (var s in Sounds) s.PropertyChanged += SoundChanged;
         RebuildCollections();
@@ -128,6 +137,8 @@ public sealed partial class MainViewModel : Observable, IDisposable
         ImportCommand = new ActionCommand(async _ => { var d = new OpenFileDialog { Filter = "Audio files|*.wav;*.mp3", Multiselect = true }; if (d.ShowDialog() == true) await Import(d.FileNames); });
         PreviewCommand = Cmd(() => PlaySelected(true)); PauseCommand = Cmd(() => Engine.Pause()); StopCommand = Cmd(() => Engine.StopLocal()); PanicCommand = Cmd(() => { Engine.Panic(); Notice = "Music cut. Your microphone remains available."; }); ToggleCommand = Cmd(() => { if (Measuring) return; if (Profile.TransmitMode == 1) { Notice = "Hold mode: use your configured hold key."; return; } if (!Engine.Routing) throw new InvalidOperationException("Start routing in Setup first."); Engine.Toggle(); });
         TransportPauseCommand = PauseCommand;
+        ImportFolderCommand = new ActionCommand(async _ => { if (Busy) return; var dialog = new OpenFolderDialog { Title = "Select a music folder", Multiselect = true }; if (dialog.ShowDialog() == true) await Import(dialog.FolderNames); });
+        CancelImportCommand = new ActionCommand(_ => importCancellation?.Cancel());
         QueueCommand = Cmd(() => { if (SelectedSound != null) Queue.Add(SelectedSound); }); NextCommand = Cmd(PlayNext); RemoveQueueCommand = Cmd(() => { if (SelectedQueued != null) Queue.Remove(SelectedQueued); });
         FavoriteCommand = Cmd(() => { if (SelectedSound != null) SelectedSound.Favorite = !SelectedSound.Favorite; });
         RemoveCommand = Cmd(() => { if (SelectedSound != null) { var s = SelectedSound; Sounds.Remove(s); s.PropertyChanged -= SoundChanged; RebuildCollections(); Save(); Changed(nameof(LibraryCount)); } });
@@ -164,7 +175,12 @@ public sealed partial class MainViewModel : Observable, IDisposable
     static void Open(string path) => Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
     void SoundChanged(object? sender, PropertyChangedEventArgs e) { if (e.PropertyName == nameof(Sound.Favorite)) Library.Refresh(); }
     void ProfileChanged(object? sender, PropertyChangedEventArgs e) { if (sender == Profile && e.PropertyName == nameof(Profile.TransmitMode)) Engine.Panic(); }
-    void RebuildCollections() { var current = Collection; Collections.Clear(); Collections.Add("All sounds"); foreach (var c in Sounds.Select(s => s.Collection).Distinct().Order()) Collections.Add(c); Collection = Collections.Contains(current) ? current : "All sounds"; }
+    static IEnumerable<string> FolderCollections(string collection)
+    {
+        var parts = collection.Split('/');
+        for (int i = 1; i <= parts.Length; i++) yield return string.Join("/", parts.Take(i));
+    }
+    void RebuildCollections() { var current = Collection; Collections.Clear(); Collections.Add("All sounds"); foreach (var c in Sounds.SelectMany(s => FolderCollections(s.Collection)).Distinct().Order()) Collections.Add(c); Collection = Collections.Contains(current) ? current : "All sounds"; }
     void Refresh()
     {
         Safe(() =>
@@ -186,21 +202,93 @@ public sealed partial class MainViewModel : Observable, IDisposable
     }
     public async Task Import(IEnumerable<string> paths)
     {
-        if (Busy) return; Busy = true; int imported = 0; var errors = new List<string>();
+        if (Busy) return;
+        Busy = true;
+        using var cancellation = new CancellationTokenSource();
+        importCancellation = cancellation;
+        int imported = 0, failed = 0;
+        ImportProgress = 0;
+        ImportScanning = true;
+        ImportStatus = "Scanning folders…";
         try
         {
-            foreach (string input in paths)
+            var inputs = paths.ToArray();
+            var entries = await Task.Run(() => FolderImport.Discover(inputs, cancellation.Token));
+            ImportScanning = false;
+            Directory.CreateDirectory(Path.Combine(Store.Data, "library"));
+            for (int index = 0; index < entries.Count; index++)
             {
+                cancellation.Token.ThrowIfCancellationRequested();
+                var entry = entries[index];
+                ImportStatus = $"Importing {index + 1} of {entries.Count}: {Path.GetFileName(entry.Path)}";
                 try
                 {
-                    var sound = await Task.Run(() => { string ext = Path.GetExtension(input).ToLowerInvariant(); if (ext != ".mp3" && ext != ".wav") throw new InvalidOperationException("Only WAV and MP3 files are supported."); string relative = Path.Combine("data", "library", Guid.NewGuid().ToString("N") + ext); string target = Path.Combine(Store.Root, relative); File.Copy(input, target); try { using var reader = new AudioFileReader(target); double sum = 0; long n = 0; float peak = 0; float[] samples = new float[16384]; int read; while ((read = reader.Read(samples, 0, samples.Length)) > 0) { for (int i = 0; i < read; i++) { float v = samples[i]; if (!float.IsFinite(v)) continue; sum += (double)v * v; peak = Math.Max(peak, Math.Abs(v)); } n += read; } return new Sound { Path = relative, Name = Path.GetFileNameWithoutExtension(input), NormalizationGain = MixProcessor.NormalizationGain(n == 0 ? 0 : sum / n, peak), Analyzed = true }; } catch { File.Delete(target); throw; } });
-                    sound.PropertyChanged += SoundChanged; Sounds.Add(sound); SelectedSound = sound; imported++;
+                    var sound = await Task.Run(() => ImportSound(entry, cancellation.Token));
+                    sound.PropertyChanged += SoundChanged;
+                    Sounds.Add(sound);
+                    SelectedSound = sound;
+                    imported++;
                 }
-                catch (Exception ex) when (IsExpectedOperationFailure(ex)) { errors.Add(Path.GetFileName(input) + ": " + ex.Message); }
+                catch (Exception ex) when (IsExpectedOperationFailure(ex)) { failed++; Store.Log(ex.ToString()); }
+                ImportProgress = (index + 1) * 100.0 / entries.Count;
+                Changed(nameof(LibraryCount));
+                if ((index + 1) % 8 == 0)
+                {
+                    RebuildCollections();
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+                }
             }
-            RebuildCollections(); Save(); Changed(nameof(LibraryCount)); Notice = $"Imported {imported} sound(s). " + (errors.Count > 0 ? string.Join("; ", errors) : "Files copied into the WarMusic library.");
+            ImportStatus = entries.Count == 0 ? "No supported WAV or MP3 files found." : $"Imported {imported} sounds. {failed} skipped.";
         }
-        finally { Busy = false; }
+        catch (OperationCanceledException) { ImportStatus = $"Import cancelled. Kept {imported} imported sounds."; }
+        catch (Exception ex) when (IsExpectedOperationFailure(ex)) { ImportStatus = $"Import stopped: {ex.Message}"; Store.Log(ex.ToString()); }
+        finally
+        {
+            RebuildCollections(); Save(); Changed(nameof(LibraryCount));
+            Notice = ImportStatus;
+            ImportScanning = false; Busy = false; importCancellation = null;
+        }
+    }
+    static Sound ImportSound(ImportEntry entry, CancellationToken cancellationToken)
+    {
+        string relative = Path.Combine("data", "library", Guid.NewGuid().ToString("N") + Path.GetExtension(entry.Path).ToLowerInvariant());
+        string target = Path.Combine(Store.Root, relative);
+        try
+        {
+            using (var input = File.OpenRead(entry.Path))
+            using (var output = File.Create(target))
+            {
+                var buffer = new byte[81920];
+                int count;
+                while ((count = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    output.Write(buffer, 0, count);
+                }
+            }
+            using var reader = new AudioFileReader(target);
+            double sum = 0; long n = 0; float peak = 0;
+            float[] samples = new float[16384]; int read;
+            while ((read = reader.Read(samples, 0, samples.Length)) > 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                for (int i = 0; i < read; i++)
+                {
+                    float v = samples[i]; if (!float.IsFinite(v)) continue;
+                    sum += (double)v * v; peak = Math.Max(peak, Math.Abs(v));
+                }
+                n += read;
+            }
+            return new Sound
+            {
+                Path = relative,
+                Name = Path.GetFileNameWithoutExtension(entry.Path),
+                Collection = entry.Collection,
+                NormalizationGain = MixProcessor.NormalizationGain(n == 0 ? 0 : sum / n, peak),
+                Analyzed = true
+            };
+        }
+        catch { if (File.Exists(target)) File.Delete(target); throw; }
     }
     void PlaySelected(bool preview) { if (SelectedSound == null) throw new InvalidOperationException("Select a sound first."); if (!Engine.Running && preview) Engine.Start(Profile, false); Engine.Play(SelectedSound, preview, Profile.Normalize); }
     void PlayNext() { if (Queue.Count == 0) return; var next = Queue[0]; Queue.RemoveAt(0); Safe(() => Engine.Play(next, false, Profile.Normalize)); }
@@ -238,6 +326,6 @@ public sealed partial class MainViewModel : Observable, IDisposable
     public void BeginSeek() => seeking = true;
     public void Seek(double value) { try { Engine.Seek(value); } catch (Exception ex) when (IsExpectedOperationFailure(ex)) { Notice = ex.Message; } finally { seeking = false; } }
     public void Save() { foreach (var p in Profiles) Store.Sanitize(p); settings.Profiles = Profiles.ToList(); settings.Sounds = Sounds.ToList(); settings.ActiveProfile = Profile.Name; Store.Save(settings); }
-    public void Dispose() { disposed = true; StopRecovery(); timer.Stop(); hotkeys?.Dispose(); Engine.Dispose(); Save(); }
+    public void Dispose() { disposed = true; importCancellation?.Cancel(); StopRecovery(); timer.Stop(); hotkeys?.Dispose(); Engine.Dispose(); Save(); }
 }
 
