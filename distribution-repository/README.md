@@ -6,9 +6,9 @@ Download packages only from this repository's Releases page. WarMusic supports W
 
 Every release includes:
 
-- a self-contained Windows x64 MSI;
+- a self-contained Windows x64 standalone EXE;
 - a self-contained portable ZIP;
 - SHA-256 checksums; and
-- build provenance identifying the private-source commit and build run.
+- build provenance identifying the source commit and build run.
 
-Unsigned downloads are marked as prereleases and may produce a Windows reputation warning. WarMusic has no telemetry or automatic updater.
+Current builds are unsigned and may produce a Windows reputation warning. WarMusic has no telemetry or automatic updater.

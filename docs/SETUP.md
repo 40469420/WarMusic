@@ -6,7 +6,7 @@ WarMusic supports Windows 11 x64 and requires a virtual cable such as VB-CABLE. 
 2. In **Audio**, select your physical microphone and headphones.
 3. Select **CABLE Input** as the virtual-cable playback endpoint.
 4. In the game, select **CABLE Output** as the microphone.
-5. Select **Ready**. Voice routing begins with music muted.
+5. Click **Connect**. Voice routing begins with music muted.
 6. Start playback in the source application. Under **Change source**, select and connect it.
 7. Enable music in WarMusic. The game's push-to-talk still applies.
 
@@ -18,14 +18,14 @@ Use headphones to prevent feedback. The physical microphone, monitor output, and
 
 ## Storage and migration
 
-- MSI installation: `%LOCALAPPDATA%\WarMusic\data`
+- Standalone EXE (`WarMusic-<version>-win-x64.exe`): `%LOCALAPPDATA%\WarMusic\data`
 - Portable ZIP or `--portable`: `data` beside `WarMusic.exe`
 
-An installed build copies adjacent legacy data on first launch only when the installed data folder is empty. The old folder is not changed or deleted. For data in any other location, use **Preferences → Export** in the old copy and **Restore** in the new copy.
+A non-portable launch copies adjacent legacy data on first start only when the installed data folder is empty. The old folder is not changed or deleted. For data in any other location, use **Preferences → Export** in the old copy and **Restore** in the new copy.
 
 Settings writes are atomic and versioned. If a settings file is corrupt or too new, WarMusic starts with safe defaults, records the problem in `diagnostics.log`, and preserves the original with a timestamped suffix.
 
-Uninstall removes the application files and Start Menu shortcut. It deliberately leaves `%LOCALAPPDATA%\WarMusic\data` in place so an uninstall, rollback, or reinstall cannot erase sounds and settings; remove that folder manually only when its contents are no longer needed.
+Removing the app does not delete `%LOCALAPPDATA%\WarMusic\data`, so sounds and settings survive a reinstall. Remove that folder manually only when its contents are no longer needed.
 
 ## Troubleshooting
 
@@ -34,7 +34,7 @@ Uninstall removes the application files and Start Menu shortcut. It deliberately
 | WarMusic says VB-CABLE is unavailable | Enable or reinstall VB-CABLE, then refresh devices. Do not select CABLE Output as the physical microphone. |
 | Game does not pick up the cable after launch | Deselect CABLE Output in the game, apply another input, then select CABLE Output again. Some games require this each session. |
 | Double voice | The game still uses the physical microphone. Change it to CABLE Output. |
-| Monitor has music, game does not | Music transmission is muted. Enable it after Ready. |
+| Monitor has music, game does not | Music transmission is muted. Enable it after Connect. |
 | Echo or feedback | Use headphones and keep the monitor separate from CABLE Input. |
 | Music is quiet or clips | Run Boost & calibration, apply the suggestion, and watch the limiter indicator. |
 | A device or source disappears | Leave automatic recovery enabled. Recovery always returns with music muted. |

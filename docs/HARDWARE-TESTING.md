@@ -6,10 +6,17 @@ Run these gates on Windows 11 x64 with a physical microphone, headphones, and VB
 
 ```powershell
 dotnet test tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj -c Release
-dotnet run --project tests/WarMusic.HardwareTests -c Release -- --capture-test --isolation-test --engine-test --routing-regression --media-test
+dotnet run --project tests/WarMusic.HardwareTests -c Release -- --capture-test --isolation-test --engine-test --routing-regression --recovery-test
 ```
 
 The first command is required in CI. The second is intentionally manual because it opens real audio endpoints and process-loopback capture.
+
+To confirm the headphone WASAPI path stays up on the devices saved in the app (monitor gain is forced to 0):
+
+```powershell
+dotnet run --project tests/WarMusic.HardwareTests -c Release -- --list-devices
+dotnet run --project tests/WarMusic.HardwareTests -c Release -- --route-smoke --mic "<microphone-id>" --monitor "<headphones-id>" --cable "<CABLE Input-id>"
+```
 
 ## Eight-hour soak
 

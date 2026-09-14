@@ -1,44 +1,59 @@
 # Release operations
 
-The source repository builds on Windows and publishes binary-only assets to `40469420/WarMusic-Releases`. Do not copy source or source-repository history into the distribution repository.
+Current Windows builds are published on this repository's [Releases](https://github.com/40469420/WarMusic/releases) page. Do not copy source into a separate distribution repository unless that split is explicitly provisioned.
 
-## One-time owner setup
+## Current assets
 
-1. Create the public `WarMusic-Releases` repository with a default branch, then copy the contents of `distribution-repository/` into it.
-2. Enable Issues and private vulnerability reporting in that public repository.
-3. In the private source repository, add a fine-grained `RELEASES_REPOSITORY_TOKEN` secret with **Contents: write** access only to `WarMusic-Releases`.
-4. Optionally set `RELEASES_REPOSITORY` to override the default destination.
-5. Review the [WiX 7 OSMF terms](https://docs.firegiant.com/wix/osmf/), confirm any fee obligation, and only then set the source repository variable `WIX_EULA_ID` to `wix7`. The workflow will not build an MSI without this explicit owner action.
-6. For signed releases, store a base64-encoded PFX as `WINDOWS_SIGNING_CERTIFICATE_BASE64` and its password as `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`.
-7. Apply the `main` protection settings in `docs/REPOSITORY-SETTINGS.md`.
+Each public release should include:
 
-## Build behavior
-
-`build/Build-Release.ps1` restores locked packages and emits:
-
-- `WarMusic-<version>-win-x64-setup.msi`
-- `WarMusic-<version>-win-x64-portable.zip`
+- `WarMusic-<version>-win-x64.exe` — standalone, self-contained, single-file Windows x64 app
+- `WarMusic-<version>-win-x64-portable.zip` — portable folder with a `WarMusic.portable` marker
 - `SHA256SUMS.txt`
 - `provenance.json`
 
-Both application packages are Windows x64 self-contained deployments. The script signs `WarMusic.exe` before creating either package and signs the final MSI when certificate variables are present. It also embeds privacy, setup, NAudio, .NET license, and third-party-notice files.
+Both application packages need no separate .NET installation. Current 1.0.x builds are unsigned, so Windows may show a reputation warning. Verify every file against `SHA256SUMS.txt`.
 
-For a local unsigned prerelease ZIP only:
+The standalone EXE and other non-portable launches store data under `%LOCALAPPDATA%\WarMusic\data`. The portable ZIP stores data beside `WarMusic.exe`.
+
+An MSI installer exists in `packaging/` but is **not** part of the 1.0.x downloads. Building it requires `WARMUSIC_WIX_EULA_ID=wix7` after reviewing the [WiX 7 OSMF terms](https://docs.firegiant.com/wix/osmf/).
+
+## Local packaging
+
+`build/Build-Release.ps1` restores locked packages and emits the portable ZIP, checksums, and provenance. It also emits an MSI when the WiX EULA variable is set. It does not currently emit the standalone single-file EXE.
+
+Portable ZIP (unsigned):
 
 ```powershell
-./build/Build-Release.ps1 -Version 1.0.1-rc.1 -SkipInstaller
+pwsh ./build/Build-Release.ps1 -Version 1.0.1 -SkipInstaller
 ```
 
-Building the MSI requires `WARMUSIC_WIX_EULA_ID=wix7`. Stable versions without a signing certificate are rejected by the release workflow.
+The script refuses a stable SemVer without a signing certificate. 1.0.0 and 1.0.1 were published unsigned to match the previous public layout; keep that exception explicit when repeating it.
+
+Standalone EXE (matches the 1.0.x Releases asset):
+
+```powershell
+dotnet publish src/WarMusic/WarMusic.csproj -c Release -r win-x64 --self-contained true -p:Version=1.0.1 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+Rename the published `WarMusic.exe` to `WarMusic-<version>-win-x64.exe` and include it in `SHA256SUMS.txt` and `provenance.json`.
+
+For signed builds, set `WARMUSIC_SIGNING_CERTIFICATE_PATH` and `WARMUSIC_SIGNING_CERTIFICATE_PASSWORD`. Store the same material in GitHub as `WINDOWS_SIGNING_CERTIFICATE_BASE64` and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD` if the Release workflow should sign.
+
+## Optional later split
+
+`distribution-repository/` is a template for a binaries-only public repo. It is not live. If that split is created later:
+
+1. Copy `distribution-repository/` into the new repo.
+2. Add a fine-grained `RELEASES_REPOSITORY_TOKEN` with Contents: write on that repo only.
+3. Optionally set `RELEASES_REPOSITORY` to override the default destination.
 
 ## Release gate
 
 1. CI is green with zero Release warnings and locked restore.
-2. The MSI and ZIP launch on a clean Windows 11 x64 VM without a separately installed .NET runtime.
-3. Install, upgrade, uninstall, prior-version rollback, and both storage modes pass.
+2. The EXE and ZIP launch on Windows 11 x64 without a separately installed .NET runtime.
+3. Installed/standalone and portable storage modes both work, including first-launch legacy copy and Export/Restore.
 4. Valid, corrupt, interrupted, and already-migrated data scenarios preserve recoverable data.
-5. The eight-hour soak and recovery matrix in `docs/HARDWARE-TESTING.md` pass.
-6. `SHA256SUMS.txt` matches every package and Authenticode is valid when configured.
-7. Unsigned builds use a prerelease SemVer suffix. Only signed, fully qualified builds receive a stable version.
+5. The hardware preflight in `docs/HARDWARE-TESTING.md` passes; complete the eight-hour soak before calling a build fully qualified.
+6. `SHA256SUMS.txt` matches every package. Authenticode is valid when a certificate is configured.
 
-Push a `v<version>` tag in the private source repository after the gates pass. The Release workflow rebuilds and tests from that tag, creates checksums and provenance, and publishes all four assets to the public distribution repository.
+Tag the commit as `<version>` (for example `1.0.1`) on `main` and attach the four assets to the GitHub Release. The automated Release workflow still expects a `v*` tag, WiX acceptance, and a distribution-repo token; do not use it until those are actually configured.
