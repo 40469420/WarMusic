@@ -1,102 +1,80 @@
 # WarMusic
 
-Windows mixer that combines a physical microphone with per-process application audio and local clip playback, then writes the mix to a virtual-cable playback device. The game records the matching virtual-cable capture endpoint as its microphone. In-game push-to-talk is unchanged.
+Your mic, your music, one input.
 
-Signal path:
+WarMusic mixes your microphone, music from a desktop app, and local sound clips into a single microphone input for your game.
 
-- **Capture** — WASAPI microphone; Windows process loopback (`VAD\Process_Loopback`) on a chosen PID; local WAV/MP3
-- **Mix** — 48 kHz stereo IEEE float; voice-priority ducking; optional comms-gated music send; peak limiter
-- **Output** — WASAPI shared playback to the virtual cable (game) and a separate monitor device (headphones)
-- **Cut** — zeros the music send and transmission gate; microphone remains live
+![WarMusic soundboard](docs/screenshots/soundboard.png)
 
-Requires a virtual cable such as VB-CABLE. Any title that can select that cable as a microphone will work.
+## Download
 
-<p align="center">
-  <img src="docs/screenshots/soundboard.png" alt="WarMusic soundboard with mixer, loadouts, and local clips" width="920">
-</p>
+Get the latest build from [Releases](https://github.com/40469420/WarMusic/releases/latest), extract the folder, and run **WarMusic.exe**.
 
-## Architecture
+You’ll need:
 
-WarMusic is a fixed route, not a general DAW graph.
+- Windows 11
+- [.NET 10 Desktop Runtime — x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
+- [VB-CABLE](https://vb-audio.com/Cable/) for routing audio into your game
 
-- Application audio is captured from one process tree via Windows process loopback. There is no Spotify (or other service) login or official API.
-- Microphone, application audio, and local clips are mixed on a background thread and written to **CABLE Input**. The game should use **CABLE Output** as its microphone.
-- A second WASAPI output is the private monitor. Headphones and the cable must be different devices; using the same endpoint is rejected to avoid feedback.
-- Local WAV/MP3 clips can be injected into the same mix. Optional RMS/peak normalization is applied per clip.
-- Voice ducking attenuates application audio (and optionally clips) when the mic exceeds a threshold, when the comms key is held, or both. Attack / hold / release are configurable.
-- Music send starts muted. Transmit is a separate gate from Connect.
+## Keep control of the mix
 
-## UI
+Set separate levels for your microphone, application music, local sounds, and headphones. Voice ducking lowers the music when you speak, then brings it back afterward.
 
-**Audio** — physical microphone, monitor output, virtual-cable playback endpoint. Connect starts the saved route.
+Use fades for a gradual change or **Cut music** to silence music immediately while keeping your microphone live.
 
-<img src="docs/screenshots/audio.png" alt="Audio devices and routing" width="920">
+## Build your soundboard
 
-**Controls** — duck threshold/reduction, comms key, hold-to-transmit vs toggle, global hotkeys.
+Import WAV and MP3 files, organize them into collections, and assign hotkeys. Search your library, mark favorites, queue clips, or preview a sound privately before playing it.
 
-<img src="docs/screenshots/controls.png" alt="Voice ducking and global hotkeys" width="920">
+Your local sounds and application music share the same outgoing mix.
 
-**Preferences** — tray, auto-reconnect, startup registration, overlay, library export/restore.
+## Connect your audio
 
-<img src="docs/screenshots/preferences.png" alt="Preferences and library backup" width="920">
+1. In **Audio**, choose your physical microphone and headphones.
+2. Select **CABLE Input** as the virtual cable playback device.
+3. In your game, select **CABLE Output** as the microphone.
+4. Click **Connect** in WarMusic.
+5. Start playback in your music app and select it under **Change source**.
+6. Enable music when you’re ready.
 
-## Install
+Music starts muted. Your game’s push-to-talk still applies.
 
-1. [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-2. [VB-CABLE](https://vb-audio.com/Cable/)
-3. Windows x64 ZIP from [Releases](https://github.com/40469420/WarMusic/releases). Extract to a writable directory and run `WarMusic.exe`.
-4. Target platform: Windows 11.
+![WarMusic audio setup](docs/screenshots/audio.png)
 
-## Route
+## Make it yours
 
-1. **Audio** — set physical mic, headphones, and `CABLE Input` as the virtual playback device.
-2. In the game, set microphone to **CABLE Output**. Game PTT still gates what the game transmits.
-3. **Connect**. Music send is muted until enabled.
-4. Start playback in the source app. **Change source** and attach that process if it is not already captured.
-5. Enable music transmit. Monitor on headphones; speaker monitoring with a live mic will feed back.
+Adjust ducking, choose your hotkeys, and save loadouts for different setups.
 
-Routing notes: [docs/SETUP.md](docs/SETUP.md).
+![WarMusic controls](docs/screenshots/controls.png)
 
-### Troubleshooting
+Tray controls, optional Windows startup, a desktop overlay, and library backups are available in **Preferences**.
 
-| Symptom | Cause / action |
+![WarMusic preferences](docs/screenshots/preferences.png)
+
+## Troubleshooting
+
+| Problem | What to check |
 | --- | --- |
-| Game does not pick up the cable after launch (observed on Wardogs) | Deselect CABLE, select another input, apply, then select CABLE Output again. Repeat each session. Cause unknown. |
-| Double voice | Game mic is still the physical device. Set it to **CABLE Output**. |
-| Monitor has music, game does not | Music send is gated. Enable **Music to game** after Connect. |
-| Echo / feedback | Monitor on headphones. Do not use speakers while the mic is open. Headphones and cable must be distinct outputs. |
-| Music too quiet or clipping | **Boost & calibration** measures source RMS/peak and suggests gain. Apply explicitly. |
-| Unwanted source audio | **Cut music** or the panic hotkey. Clears the music send and gate; mic stays up. |
+| No music in the game | Check that music is enabled, WarMusic sends to CABLE Input, and the game uses CABLE Output. |
+| Music is too quiet | Open **Boost & calibration**, measure the source, and apply the suggested adjustment. |
+| Echo or feedback | Use headphones and keep the headphone output separate from the cable. |
+| Wardogs ignores the cable | Select another microphone in the game, apply it, then select CABLE Output again. This may need repeating each session. |
 
-## Features
+See the [setup guide](docs/SETUP.md) for more details.
 
-**Loadouts.** Named profiles for devices, duck settings, and the clip library.
+## Build from source
 
-**Voice ducking.** Application (and optionally clip) gain follows mic level and/or the comms key. Threshold and reduction are on Controls.
-
-**Comms key.** Hold or toggle. In hold mode, music is written to the cable only while the key is down.
-
-**Overlay.** Always-on-top status strip for borderless/windowed sessions.
-
-**Backup.** Preferences → Export writes a `.warmusic` archive of sounds and loadouts. Restore merges; existing items are not wiped.
-
-**Private listen / mix test.** Live monitor of the mic only. The 10 s recorded test is mic + local clips. Application audio is omitted from the recording.
-
-## Build
-
-Windows, [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0):
+Install the .NET 10 SDK on Windows:
 
 ```powershell
 dotnet publish src/WarMusic/WarMusic.csproj -c Release --self-contained false -o release
 dotnet run --project tests/WarMusic.Tests -c Release
 ```
 
-Framework-dependent, unsigned, not obfuscated. Settings, recordings, imported sounds, logs, and build caches are not in this repository.
+## About
 
-## Scope
+WarMusic captures application playback through Windows, including playback from Spotify. It does not use an official Spotify integration, and neither Spotify nor VB-CABLE is bundled.
 
-- Not a Spotify client, plugin, or partnership. The UI label is the captured process name.
-- VB-CABLE is a separate VB-Audio install and is not bundled.
-- Not a replacement for the game’s radio stack. It only feeds the microphone device the game already exposes.
+Creator links and the development disclaimer are in the app’s **Credits** tab.
 
-Third-party notices: [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md). Creator links and the in-app disclaimer are on **Credits**.
+[Third-party notices](docs/THIRD-PARTY.md)
