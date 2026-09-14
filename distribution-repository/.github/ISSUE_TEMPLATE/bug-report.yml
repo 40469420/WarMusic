@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible WarMusic problem
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach settings, imported sounds, recordings, or other private data.
+  - type: input
+    id: version
+    attributes:
+      label: WarMusic version
+      placeholder: 1.1.0-rc.1
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package type
+      options:
+        - MSI installer
+        - Portable ZIP
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows 11 version
+      placeholder: 24H2, OS build 26100.x
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: audio
+    attributes:
+      label: Audio setup and health counters
+      description: List device models and the AUDIO HEALTH line. Do not upload diagnostics without checking them first.
+    validations:
+      required: true

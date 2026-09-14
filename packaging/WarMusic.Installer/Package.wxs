@@ -1,0 +1,56 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="WarMusic"
+    Manufacturer="WarMusic"
+    Version="$(ProductVersion)"
+    UpgradeCode="61B749BF-4795-4F1A-AFCB-55A08CC5E40A"
+    Scope="perMachine"
+    InstallerVersion="500">
+
+    <SummaryInformation Description="WarMusic game voice-chat audio mixer" />
+    <!-- Windows Installer compares only the numeric part of SemVer. Allowing a
+         same-version major upgrade lets 1.0.1 replace 1.0.1-rc.x safely. -->
+    <MajorUpgrade
+      AllowSameVersionUpgrades="yes"
+      DowngradeErrorMessage="A newer version of WarMusic is already installed."
+      Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <Icon Id="WarMusicIcon" SourceFile="$(PublishDir)\WarMusic.ico" />
+    <Property Id="ARPPRODUCTICON" Value="WarMusicIcon" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="WarMusic" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="WarMusic">
+        <Component Id="StartMenuShortcut" Guid="B9602FD4-97A6-4B3E-B297-65E6BA95A0D7">
+          <Shortcut
+            Id="ApplicationStartMenuShortcut"
+            Name="WarMusic"
+            Description="Game voice-chat audio mixer"
+            Target="[INSTALLFOLDER]WarMusic.exe"
+            WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+          <RegistryValue
+            Root="HKLM"
+            Key="Software\WarMusic"
+            Name="Installed"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+          <RemoveRegistryKey
+            Id="RemoveWarMusicRegistryKey"
+            Root="HKLM"
+            Key="Software\WarMusic"
+            Action="removeOnUninstall" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="WarMusic" Level="1">
+      <Files Directory="INSTALLFOLDER" Include="$(PublishDir)\**" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+  </Package>
+</Wix>

@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - /src/WarMusic
+      - /tests/WarMusic.UnitTests
+      - /tests/WarMusic.HardwareTests
+      - /packaging/WarMusic.Installer
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      dotnet-dependencies:
+        patterns:
+          - "*"
+        group-by: dependency-name
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5

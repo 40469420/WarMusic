@@ -2,19 +2,24 @@
 
 Your mic, your music, one input.
 
-WarMusic mixes your microphone, music from a desktop app, and local sound clips into a single microphone input for your game.
+WarMusic mixes your microphone, music from a desktop app, and local sound clips into a single microphone input for your game. It keeps the game's normal push-to-talk behavior and does not require a music-service login or API.
 
 ![WarMusic soundboard](docs/screenshots/soundboard.png)
 
 ## Download
 
-Get the latest build from [Releases](https://github.com/40469420/WarMusic/releases/latest), extract the folder, and run **WarMusic.exe**.
+WarMusic supports Windows 11 x64 and requires [VB-CABLE](https://vb-audio.com/Cable/) or a compatible virtual cable. VB-CABLE is not bundled.
 
-You’ll need:
+The next public build is intentionally a prerelease until clean-machine installation, migration, recovery, and the eight-hour hardware soak gate have passed. Release packages are self-contained, so users do not need to install .NET separately:
 
-- Windows 11
-- [.NET 10 Desktop Runtime — x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
-- [VB-CABLE](https://vb-audio.com/Cable/) for routing audio into your game
+- `WarMusic-<version>-win-x64-setup.msi` installs for all users and adds a Start Menu shortcut.
+- `WarMusic-<version>-win-x64-portable.zip` runs entirely from an extracted writable folder.
+
+After the public `WarMusic-Releases` repository is provisioned, download an artifact and verify it against `SHA256SUMS.txt`. Until signed builds are available, use prereleases only and expect a Windows reputation warning.
+
+Installed mode stores settings, diagnostics, recordings, and imported sounds in `%LOCALAPPDATA%\WarMusic\data`. Portable mode is selected by the included `WarMusic.portable` marker or `--portable` and stores data beside `WarMusic.exe`.
+
+On the first installed launch, adjacent legacy data is copied when present; the original remains untouched. To migrate from another folder, use **Preferences → Export/Restore**.
 
 ## Keep control of the mix
 
@@ -31,13 +36,13 @@ Your local sounds and application music share the same outgoing mix.
 ## Connect your audio
 
 1. In **Audio**, choose your physical microphone and headphones.
-2. Select **CABLE Input** as the virtual cable playback device.
+2. Select **CABLE Input** as the game output.
 3. In your game, select **CABLE Output** as the microphone.
 4. Click **Connect** in WarMusic.
 5. Start playback in your music app and select it under **Change source**.
-6. Enable music when you’re ready.
+6. Enable music when you're ready.
 
-Music starts muted. Your game’s push-to-talk still applies.
+Music starts muted. Your game's push-to-talk still applies.
 
 ![WarMusic audio setup](docs/screenshots/audio.png)
 
@@ -47,9 +52,11 @@ Adjust ducking, choose your hotkeys, and save loadouts for different setups.
 
 ![WarMusic controls](docs/screenshots/controls.png)
 
-Tray controls, optional Windows startup, a desktop overlay, and library backups are available in **Preferences**.
+Tray controls, optional Windows startup, a desktop overlay, library backups, and local audio health diagnostics are available in **Preferences**.
 
 ![WarMusic preferences](docs/screenshots/preferences.png)
+
+WarMusic has no telemetry, automatic updater, or runtime network dependency. See the [privacy statement](docs/PRIVACY.md).
 
 ## Troubleshooting
 
@@ -60,21 +67,29 @@ Tray controls, optional Windows startup, a desktop overlay, and library backups 
 | Echo or feedback | Use headphones and keep the headphone output separate from the cable. |
 | Wardogs ignores the cable | Select another microphone in the game, apply it, then select CABLE Output again. This may need repeating each session. |
 
-See the [setup guide](docs/SETUP.md) for more details.
+See the [setup guide](docs/SETUP.md) for detailed routing and troubleshooting.
 
-## Build from source
+## Build and test
 
-Install the .NET 10 SDK on Windows:
+Use Windows 11 x64 and the .NET SDK pinned by `global.json`:
 
 ```powershell
-dotnet publish src/WarMusic/WarMusic.csproj -c Release --self-contained false -o release
-dotnet run --project tests/WarMusic.Tests -c Release
+dotnet restore src/WarMusic/WarMusic.csproj --locked-mode -r win-x64
+dotnet restore tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj --locked-mode
+dotnet build src/WarMusic/WarMusic.csproj -c Release --no-restore
+dotnet test tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj -c Release --no-restore
 ```
+
+The deterministic suite reports each check independently. Device-dependent checks and the soak runner live in `tests/WarMusic.HardwareTests`; see the [hardware testing guide](docs/HARDWARE-TESTING.md).
+
+Release packaging, signing, and public-repository setup are documented in the [release guide](docs/RELEASING.md). The packaging script emits the MSI, portable ZIP, SHA-256 checksums, and build provenance.
 
 ## About
 
 WarMusic captures application playback through Windows, including playback from Spotify. It does not use an official Spotify integration, and neither Spotify nor VB-CABLE is bundled.
 
-Creator links and the development disclaimer are in the app’s **Credits** tab.
+WarMusic is not a replacement for a game's radio stack; it feeds the microphone device the game already exposes. Source visibility and licensing remain separate owner decisions. The public release repository distributes binaries and accepts issue reports only.
+
+Creator links and the development disclaimer are in the app's **Credits** tab.
 
 [Third-party notices](docs/THIRD-PARTY.md)

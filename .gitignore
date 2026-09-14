@@ -4,6 +4,7 @@
 .packages-feed/
 release/
 dist/
+artifacts/
 work/
 data/
 tests/scratch/
