@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.packages
+
+jobs:
+  build-test-package:
+    name: Windows build, test, and portable package
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            src/WarMusic/packages.lock.json
+            tests/WarMusic.UnitTests/packages.lock.json
+            tests/WarMusic.HardwareTests/packages.lock.json
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: |
+          dotnet restore src/WarMusic/WarMusic.csproj --locked-mode -r win-x64
+          dotnet restore tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj --locked-mode
+          dotnet restore tests/WarMusic.HardwareTests/WarMusic.HardwareTests.csproj --locked-mode
+
+      - name: Build application and hardware suite
+        shell: pwsh
+        run: |
+          dotnet build src/WarMusic/WarMusic.csproj -c Release --no-restore
+          dotnet build tests/WarMusic.HardwareTests/WarMusic.HardwareTests.csproj -c Release --no-restore
+
+      - name: Verify formatting
+        shell: pwsh
+        run: |
+          dotnet format src/WarMusic/WarMusic.csproj --no-restore --verify-no-changes
+          dotnet format tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj --no-restore --verify-no-changes
+          dotnet format tests/WarMusic.HardwareTests/WarMusic.HardwareTests.csproj --no-restore --verify-no-changes
+
+      - name: Run deterministic tests
+        run: dotnet test tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj -c Release --no-restore --logger "trx;LogFileName=unit-tests.trx"
+
+      - name: Build portable package
+        shell: pwsh
+        run: ./build/Build-Release.ps1 -Version 0.0.0-ci -SkipInstaller
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: tests/WarMusic.UnitTests/TestResults/*.trx
+          if-no-files-found: warn
+
+      - name: Upload portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: warmusic-portable
+          path: artifacts/WarMusic-0.0.0-ci-win-x64-portable.zip
+          if-no-files-found: error

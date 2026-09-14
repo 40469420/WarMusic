@@ -1,0 +1,193 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SemVer without the leading v (for example, 1.0.1-rc.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.packages
+  WARMUSIC_WIX_EULA_ID: ${{ vars.WIX_EULA_ID }}
+  WARMUSIC_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+
+jobs:
+  build-and-publish:
+    name: Build and publish Windows release
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            src/WarMusic/packages.lock.json
+            tests/WarMusic.UnitTests/packages.lock.json
+            tests/WarMusic.HardwareTests/packages.lock.json
+            packaging/WarMusic.Installer/packages.lock.json
+
+      - name: Validate release inputs
+        id: release
+        shell: pwsh
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+          SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          RELEASES_REPOSITORY_TOKEN: ${{ secrets.RELEASES_REPOSITORY_TOKEN }}
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and $env:GITHUB_REF -ne 'refs/heads/main') {
+              throw 'Manual releases must run from the main branch.'
+          }
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) {
+              throw 'Releases must point to a commit contained in main.'
+          }
+
+          $version = if ($env:GITHUB_EVENT_NAME -eq 'push') {
+              $env:GITHUB_REF_NAME.TrimStart('v')
+          } else {
+              $env:MANUAL_VERSION
+          }
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+              throw "Invalid release version: $version"
+          }
+          if ($env:WARMUSIC_WIX_EULA_ID -ne 'wix7') {
+              throw 'Set the WIX_EULA_ID repository variable to wix7 only after the owner reviews and accepts the WiX 7 OSMF EULA.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:RELEASES_REPOSITORY_TOKEN)) {
+              throw 'RELEASES_REPOSITORY_TOKEN is required to publish to the distribution repository.'
+          }
+
+          $prerelease = $version.Contains('-')
+          $signed = -not [string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE)
+          if (-not $prerelease -and -not $signed) {
+              throw 'Stable releases require a Windows code-signing certificate. Use a prerelease version while signing is unavailable.'
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$($prerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "signed=$($signed.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: |
+          dotnet restore src/WarMusic/WarMusic.csproj --locked-mode -r win-x64
+          dotnet restore tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj --locked-mode
+          dotnet restore tests/WarMusic.HardwareTests/WarMusic.HardwareTests.csproj --locked-mode
+          dotnet restore packaging/WarMusic.Installer/WarMusic.Installer.wixproj --locked-mode
+
+      - name: Build and test
+        shell: pwsh
+        run: |
+          dotnet build src/WarMusic/WarMusic.csproj -c Release --no-restore
+          dotnet build tests/WarMusic.HardwareTests/WarMusic.HardwareTests.csproj -c Release --no-restore
+          dotnet test tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj -c Release --no-restore
+
+      - name: Verify formatting
+        shell: pwsh
+        run: |
+          dotnet format src/WarMusic/WarMusic.csproj --no-restore --verify-no-changes
+          dotnet format tests/WarMusic.UnitTests/WarMusic.UnitTests.csproj --no-restore --verify-no-changes
+          dotnet format tests/WarMusic.HardwareTests/WarMusic.HardwareTests.csproj --no-restore --verify-no-changes
+
+      - name: Prepare signing certificate
+        if: steps.release.outputs.signed == 'true'
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+        run: |
+          $path = Join-Path $env:RUNNER_TEMP 'warmusic-signing.pfx'
+          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:SIGNING_CERTIFICATE))
+          "WARMUSIC_SIGNING_CERTIFICATE_PATH=$path" >> $env:GITHUB_ENV
+
+      - name: Build release packages
+        shell: pwsh
+        run: ./build/Build-Release.ps1 -Version '${{ steps.release.outputs.version }}'
+
+      - name: Verify checksums and signatures
+        shell: pwsh
+        run: |
+          Push-Location artifacts
+          try {
+              foreach ($line in Get-Content SHA256SUMS.txt) {
+                  $parts = $line -split '  ', 2
+                  $actual = (Get-FileHash $parts[1] -Algorithm SHA256).Hash.ToLowerInvariant()
+                  if ($actual -ne $parts[0]) { throw "Checksum mismatch: $($parts[1])" }
+              }
+          } finally {
+              Pop-Location
+          }
+
+          if ('${{ steps.release.outputs.signed }}' -eq 'true') {
+              $signedFiles = @(
+                  'artifacts/staging/installed/WarMusic.exe',
+                  'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-setup.msi'
+              )
+              foreach ($file in $signedFiles) {
+                  $signature = Get-AuthenticodeSignature $file
+                  if ($signature.Status -ne 'Valid') {
+                      throw "Invalid Authenticode signature on $file: $($signature.StatusMessage)"
+                  }
+              }
+          }
+
+      - name: Upload immutable workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarMusic-${{ steps.release.outputs.version }}-win-x64
+          if-no-files-found: error
+          path: |
+            artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-portable.zip
+            artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-setup.msi
+            artifacts/SHA256SUMS.txt
+            artifacts/provenance.json
+
+      - name: Publish to distribution repository
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_REPOSITORY_TOKEN }}
+          RELEASES_REPOSITORY: ${{ vars.RELEASES_REPOSITORY }}
+        run: |
+          $repository = if ($env:RELEASES_REPOSITORY) {
+              $env:RELEASES_REPOSITORY
+          } else {
+              '40469420/WarMusic-Releases'
+          }
+          $arguments = @(
+              'release', 'create', "v${{ steps.release.outputs.version }}",
+              '--repo', $repository,
+              '--title', "WarMusic ${{ steps.release.outputs.version }}",
+              '--notes-file', 'docs/RELEASE-NOTES.md',
+              'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-portable.zip',
+              'artifacts/WarMusic-${{ steps.release.outputs.version }}-win-x64-setup.msi',
+              'artifacts/SHA256SUMS.txt',
+              'artifacts/provenance.json'
+          )
+          if ('${{ steps.release.outputs.prerelease }}' -eq 'true') {
+              $arguments += '--prerelease'
+          }
+          gh @arguments
+
+      - name: Remove signing certificate
+        if: always() && steps.release.outputs.signed == 'true'
+        shell: pwsh
+        run: Remove-Item (Join-Path $env:RUNNER_TEMP 'warmusic-signing.pfx') -Force -ErrorAction SilentlyContinue

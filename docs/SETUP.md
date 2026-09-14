@@ -1,17 +1,42 @@
 # Audio setup
 
-1. Install VB-CABLE if needed.
-2. In Audio, select your physical microphone and headphones.
-3. Select CABLE Input as the virtual cable playback endpoint.
-4. In your game, select CABLE Output as the microphone.
-5. Click Connect to start your saved route. Music starts muted.
-6. Play music in your player. Under Change source, select and connect the application if necessary.
-7. Enable music in WarMusic. Your game push-to-talk still applies.
+WarMusic supports Windows 11 x64 and requires a virtual cable such as VB-CABLE. It checks both requirements before opening the game route.
 
-Use headphones to prevent feedback. Keep the physical microphone, headphone output and cable roles distinct.
+1. Install VB-CABLE directly from VB-Audio, then restart Windows if its installer requests it.
+2. In **Audio**, select your physical microphone and headphones.
+3. Select **CABLE Input** as the virtual-cable playback endpoint.
+4. In the game, select **CABLE Output** as the microphone.
+5. Select **Ready**. Voice routing begins with music muted.
+6. Start playback in the source application. Under **Change source**, select and connect it.
+7. Enable music in WarMusic. The game's push-to-talk still applies.
 
-Music to game controls transmission level. Boost & calibration measures source loudness and offers an adjustment; apply it explicitly. Cut music immediately silences music while preserving voice.
+Use headphones to prevent feedback. The physical microphone, monitor output, and cable must be distinct roles. WarMusic rejects using the cable as its own microphone or monitor.
 
-Listen live previews only the microphone. The recorded test includes microphone and local sounds; application music is excluded.
+**Music to game** controls transmission level. **Boost & calibration** measures source loudness and proposes an adjustment; applying it never enables transmission. **Cut music** immediately silences music while preserving voice.
 
-Settings and imported sounds are stored in the data folder beside the application. Export/Restore in Preferences transfers a library. Start with Windows is optional and does not automatically begin routing.
+**Listen live** previews only the microphone through the private monitor. The recorded test includes microphone and local sounds, but deliberately excludes application music.
+
+## Storage and migration
+
+- MSI installation: `%LOCALAPPDATA%\WarMusic\data`
+- Portable ZIP or `--portable`: `data` beside `WarMusic.exe`
+
+An installed build copies adjacent legacy data on first launch only when the installed data folder is empty. The old folder is not changed or deleted. For data in any other location, use **Preferences → Export** in the old copy and **Restore** in the new copy.
+
+Settings writes are atomic and versioned. If a settings file is corrupt or too new, WarMusic starts with safe defaults, records the problem in `diagnostics.log`, and preserves the original with a timestamped suffix.
+
+Uninstall removes the application files and Start Menu shortcut. It deliberately leaves `%LOCALAPPDATA%\WarMusic\data` in place so an uninstall, rollback, or reinstall cannot erase sounds and settings; remove that folder manually only when its contents are no longer needed.
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| WarMusic says VB-CABLE is unavailable | Enable or reinstall VB-CABLE, then refresh devices. Do not select CABLE Output as the physical microphone. |
+| Game does not pick up the cable after launch | Deselect CABLE Output in the game, apply another input, then select CABLE Output again. Some games require this each session. |
+| Double voice | The game still uses the physical microphone. Change it to CABLE Output. |
+| Monitor has music, game does not | Music transmission is muted. Enable it after Ready. |
+| Echo or feedback | Use headphones and keep the monitor separate from CABLE Input. |
+| Music is quiet or clips | Run Boost & calibration, apply the suggestion, and watch the limiter indicator. |
+| A device or source disappears | Leave automatic recovery enabled. Recovery always returns with music muted. |
+
+WarMusic does not update itself or contact a service. Check the public GitHub Releases page for newer versions.
