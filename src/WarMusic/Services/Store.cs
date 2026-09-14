@@ -39,6 +39,7 @@ public static class Store
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         Configure(Path.GetFullPath(root), StorageMode.Test, Path.GetFullPath(root));
+        EnsureDataDirectories();
     }
 
     internal static void Initialize(StorageMode mode, string applicationRoot, string localAppDataRoot)
@@ -57,6 +58,11 @@ public static class Store
             TryMigrateLegacyData(applicationRoot);
         }
 
+        EnsureDataDirectories();
+    }
+
+    private static void EnsureDataDirectories()
+    {
         Directory.CreateDirectory(Data);
         Directory.CreateDirectory(Path.Combine(Data, "library"));
     }
