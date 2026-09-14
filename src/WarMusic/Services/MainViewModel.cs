@@ -82,7 +82,7 @@ public sealed partial class MainViewModel:Observable,IDisposable
  public string LibraryCount=>$"{Sounds.Count} sounds";
  static double Meter(float peak)=>Math.Clamp((20*Math.Log10(Math.Max(peak,.001))+60)/60*100,0,100);
  public ICommand RefreshCommand {get;}public ICommand RouteCommand {get;}public ICommand PreviewStartCommand {get;}public ICommand StopRouteCommand {get;}public ICommand ConnectCommand {get;}public ICommand DisconnectCommand {get;}
- public ICommand ImportCommand {get;}public ICommand PlayCommand {get;}public ICommand PreviewCommand {get;}public ICommand PauseCommand {get;}public ICommand StopCommand {get;}public ICommand PanicCommand {get;}public ICommand ToggleCommand {get;}public ICommand QueueCommand {get;}public ICommand NextCommand {get;}public ICommand RemoveQueueCommand {get;}
+ public ICommand ImportCommand {get;}public ICommand PreviewCommand {get;}public ICommand PauseCommand {get;}public ICommand StopCommand {get;}public ICommand PanicCommand {get;}public ICommand ToggleCommand {get;}public ICommand QueueCommand {get;}public ICommand NextCommand {get;}public ICommand RemoveQueueCommand {get;}
  public ICommand TransportPauseCommand {get;}
  public ICommand FavoriteCommand {get;}public ICommand RemoveCommand {get;}public ICommand AssignCollectionCommand {get;}public ICommand SaveCommand {get;}public ICommand SaveProfileCommand {get;}public ICommand HotkeyCommand {get;}public ICommand RecordCommand {get;}public ICommand EndRecordCommand {get;}public ICommand PreviewTestCommand {get;}public ICommand DeleteTestCommand {get;}public ICommand HelpCommand {get;}public ICommand CableCommand {get;}public ICommand WindowsCommand {get;}
  public MainViewModel(AudioEngine? engine=null)
@@ -99,7 +99,7 @@ public sealed partial class MainViewModel:Observable,IDisposable
   PreviewStartCommand=Cmd(()=>{StopRecovery();Save();Engine.Start(Profile,false);Notice="Headphones ready. Select a sound and use Private preview.";});StopRouteCommand=Cmd(()=>{StopRecovery();Engine.Stop();Notice="All audio stopped.";});
   ConnectCommand=new ActionCommand(async _=>await Connect());DisconnectCommand=Cmd(()=>{wantSource=false;suggestedGain=null;Changed(nameof(CanApplyLevel));Engine.DisconnectSource();SourceState="No application connected";});
   ImportCommand=new ActionCommand(async _=>{var d=new OpenFileDialog{Filter="Audio files|*.wav;*.mp3",Multiselect=true};if(d.ShowDialog()==true)await Import(d.FileNames);});
-  PlayCommand=Cmd(()=>PlaySelected(false));PreviewCommand=Cmd(()=>PlaySelected(true));PauseCommand=Cmd(()=>Engine.Pause());StopCommand=Cmd(()=>Engine.StopLocal());PanicCommand=Cmd(()=>{Engine.Panic();Notice="Music cut. Your microphone remains available.";});ToggleCommand=Cmd(()=>{if(Measuring)return;if(Profile.TransmitMode==1){Notice="Hold mode: use your configured hold key.";return;}if(!Engine.Routing)throw new InvalidOperationException("Start routing in Setup first.");Engine.Toggle();});
+  PreviewCommand=Cmd(()=>PlaySelected(true));PauseCommand=Cmd(()=>Engine.Pause());StopCommand=Cmd(()=>Engine.StopLocal());PanicCommand=Cmd(()=>{Engine.Panic();Notice="Music cut. Your microphone remains available.";});ToggleCommand=Cmd(()=>{if(Measuring)return;if(Profile.TransmitMode==1){Notice="Hold mode: use your configured hold key.";return;}if(!Engine.Routing)throw new InvalidOperationException("Start routing in Setup first.");Engine.Toggle();});
   TransportPauseCommand=PauseCommand;
   QueueCommand=Cmd(()=>{if(SelectedSound!=null)Queue.Add(SelectedSound);});NextCommand=Cmd(PlayNext);RemoveQueueCommand=Cmd(()=>{if(SelectedQueued!=null)Queue.Remove(SelectedQueued);});
   FavoriteCommand=Cmd(()=>{if(SelectedSound!=null)SelectedSound.Favorite=!SelectedSound.Favorite;});
@@ -190,6 +190,7 @@ public sealed partial class MainViewModel:Observable,IDisposable
  public void Save(){foreach(var p in Profiles)Store.Sanitize(p);settings.Profiles=Profiles.ToList();settings.Sounds=Sounds.ToList();settings.ActiveProfile=Profile.Name;Store.Save(settings);}
  public void Dispose(){disposed=true;StopRecovery();timer.Stop();hotkeys?.Dispose();Engine.Dispose();Save();}
 }
+
 
 
 
