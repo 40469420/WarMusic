@@ -29,6 +29,7 @@ public partial class App : Application
                     var model = (MainViewModel)window.DataContext;
                     if (!WindowTheme.IsApplied(new System.Windows.Interop.WindowInteropHelper(window).Handle)) throw new InvalidOperationException("Native title bar theme was not applied.");
                     Directory.CreateDirectory(Path.Combine(Store.Root, "docs", "screenshots"));
+                    new SetupWindow(model) { Owner = window }.VerifySetupScreens(Path.Combine(Store.Root, "docs", "screenshots"));
                     model.Sounds.Add(new() { Name = "Convoy ambience", Collection = "Arma", Hotkey = "Ctrl+1", Color = "#365E70" }); model.Sounds.Add(new() { Name = "Radio check", Collection = "Radio", Hotkey = "Ctrl+2", Color = "#75483C" });
                     for (int i = 0; i < 5; i++)
                     {
@@ -56,4 +57,3 @@ public partial class App : Application
         }
     }
 }
-

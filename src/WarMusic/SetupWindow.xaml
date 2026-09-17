@@ -1,0 +1,27 @@
+<Window x:Class="WarMusic.SetupWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WarMusic · Quick setup" Width="620" Height="610" MinWidth="480" MinHeight="480" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Bg}" Foreground="#E5E9DF" FontFamily="Segoe UI" FontSize="13" ShowInTaskbar="False">
+ <Grid Margin="28">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel><TextBlock Text="QUICK SETUP" Foreground="#AABA85" FontSize="11"/><TextBlock x:Name="StepTitle" FontSize="26" FontWeight="SemiBold" Margin="0,10,0,8"/><TextBlock x:Name="StepDescription" TextWrapping="Wrap" Foreground="#A0AC94"/><ProgressBar x:Name="StepProgress" Maximum="4" Margin="0,22,0,22"/></StackPanel>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+   <StackPanel>
+    <StackPanel x:Name="DevicePage">
+     <TextBlock x:Name="DeviceLabel" FontWeight="SemiBold"/>
+     <ComboBox x:Name="DeviceChoice" DisplayMemberPath="Name" SelectionChanged="DeviceChanged" AutomationProperties.Name="Setup audio device"/>
+     <TextBlock x:Name="DeviceHint" Foreground="#A0AC94" TextWrapping="Wrap" Margin="0,8,0,18"/>
+     <WrapPanel><Button Content="Refresh devices" Click="RefreshDevices"/><Button x:Name="InstallCable" Content="Get VB-CABLE" Click="GetCable"/></WrapPanel>
+    </StackPanel>
+    <StackPanel x:Name="GamePage" Visibility="Collapsed">
+     <TextBlock Text="In your game's microphone settings" FontWeight="SemiBold"/>
+     <TextBlock Text="Select the recording end of your chosen cable." TextWrapping="Wrap" Margin="0,8,0,12"/>
+     <Border Background="{StaticResource Panel}" Padding="16" CornerRadius="6"><StackPanel><TextBlock Text="WarMusic → cable playback device" Foreground="#A0AC94"/><TextBlock x:Name="CableSummary" TextWrapping="Wrap" Margin="0,5,0,12"/><TextBlock Text="Game → matching cable recording device" Foreground="#A0AC94"/><TextBlock Text="For VB-CABLE: CABLE Output" FontWeight="SemiBold" Margin="0,5,0,0"/></StackPanel></Border>
+     <TextBlock Text="After saving, press Connect. Choose your music app on the Soundboard, start playback, then enable music. Your game's push-to-talk still applies." TextWrapping="Wrap" Foreground="#A0AC94" Margin="0,16,0,8"/>
+     <TextBlock Text="Use the game's mic test to confirm the mix. WarMusic cannot check the game's input for you." TextWrapping="Wrap" Foreground="#A0AC94"/>
+    </StackPanel>
+    <TextBlock x:Name="Validation" Foreground="#E8C777" TextWrapping="Wrap" Margin="0,12,0,8"/>
+   </StackPanel>
+  </ScrollViewer>
+  <Grid Grid.Row="2" Margin="0,20,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Button Content="Set up later" Click="Later" HorizontalAlignment="Left" Background="Transparent"/><Button x:Name="BackButton" Grid.Column="1" Content="Back" Click="Back"/><Button x:Name="NextButton" Grid.Column="2" Content="Next" Click="Next" Background="#566737" IsDefault="True"/></Grid>
+ </Grid>
+</Window>

@@ -40,7 +40,7 @@ public sealed partial class MainViewModel : Observable, IDisposable
     string collection = "All sounds"; public string Collection { get => collection; set { Set(ref collection, value ?? "All sounds"); Profile.Collection = collection; Library.Refresh(); } }
     bool favorites; public bool Favorites { get => favorites; set { Set(ref favorites, value); Library.Refresh(); } }
     bool repeat; public bool Repeat { get => repeat; set { Set(ref repeat, value); Engine.SetLoop(value); } }
-    string notice = "Choose your devices in Setup, then test the route."; public string Notice { get => notice; set => Set(ref notice, value); }
+    string notice = "Choose your devices in Audio or Quick setup, then test the route."; public string Notice { get => notice; set => Set(ref notice, value); }
     string profileName = ""; public string ProfileName { get => profileName; set => Set(ref profileName, value); }
     string newCollection = ""; public string NewCollection { get => newCollection; set => Set(ref newCollection, value); }
     string sourceState = "No application connected"; public string SourceState { get => sourceState; set => Set(ref sourceState, value); }
@@ -48,9 +48,9 @@ public sealed partial class MainViewModel : Observable, IDisposable
     bool busy; public bool Busy { get => busy; set => Set(ref busy, value); }
     int tab; public int Tab { get => tab; set => Set(ref tab, value); }
     public bool IsRouting => Engine.Routing;
-    public string SessionLabel => !Engine.Routing ? "Offline" : Engine.Transmitting ? "Broadcasting" : "Voice connected";
+    public string SessionLabel => !Engine.Routing ? "Offline" : Engine.Transmitting ? "Music enabled" : "Music muted";
     public string SessionColor => Engine.Routing ? "#AABA85" : "#59634F";
-    public string Transmission => !Engine.Routing ? "ROUTING UNAVAILABLE" : Engine.Transmitting ? "MUSIC ROUTED TO GAME INPUT" : "MUSIC OFF · VOICE ROUTED";
+    public string Transmission => !Engine.Routing ? "ROUTING UNAVAILABLE" : Engine.Transmitting ? "MUSIC ENABLED · CABLE CONNECTED" : "MUSIC MUTED · CABLE CONNECTED";
     public string MusicButtonLabel => Engine.Transmitting ? "Mute music" : "Enable music";
     public string Listening => Engine.IsPreview ? "PRIVATE PREVIEW" : "";
     public bool LocalTransport => Engine.HasLocalTrack;
@@ -318,10 +318,11 @@ public sealed partial class MainViewModel : Observable, IDisposable
         foreach (var name in new[] { nameof(Transmission), nameof(Listening), nameof(Track), nameof(PlayLabel), nameof(TimeLabel), nameof(Duration), nameof(MicMeter), nameof(MusicMeter), nameof(OutputMeter), nameof(DuckStatus), nameof(Limiter), nameof(TestStatus), nameof(RouteStatus), nameof(AudioHealth) }) Changed(name);
         if (!seeking) Changed(nameof(Position));
         foreach (var name in new[] { nameof(TrackDetails), nameof(LocalTransport), nameof(CanTogglePlayback), nameof(CanSeek), nameof(LiveMic), nameof(LiveMicStatus) }) Changed(name);
+        UpdateRoutingStatus();
         Changed(nameof(MusicButtonLabel)); Changed(nameof(IsRouting)); Changed(nameof(SessionLabel)); Changed(nameof(SessionColor));
 
         if (tick % 150 == 0) _ = Recover();
-        if (++tick % 30 == 0 && Engine.SourcePid != 0) { try { using var process = Process.GetProcessById(Engine.SourcePid); if (process.HasExited) throw new InvalidOperationException(); SourceState = Engine.AppPeak > .0001 ? (Engine.Transmitting ? "Application music is being sent to the cable" : "Receiving music · press Enable music to send it") : "Connected · source silent"; } catch (Exception ex) when (IsExpectedOperationFailure(ex)) { Engine.Panic(); Engine.DisconnectSource(); SourceState = "Source closed · Refresh and reconnect"; } }
+        if (++tick % 30 == 0 && Engine.SourcePid != 0) { try { using var process = Process.GetProcessById(Engine.SourcePid); if (process.HasExited) throw new InvalidOperationException(); SourceState = SourceRoutingStatus; } catch (Exception ex) when (IsExpectedOperationFailure(ex)) { Engine.Panic(); Engine.DisconnectSource(); SourceState = "Source closed · Refresh and reconnect"; } }
     }
     public void BeginSeek() => seeking = true;
     public void Seek(double value) { try { Engine.Seek(value); } catch (Exception ex) when (IsExpectedOperationFailure(ex)) { Notice = ex.Message; } finally { seeking = false; } }

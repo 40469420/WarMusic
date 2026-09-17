@@ -56,6 +56,7 @@ public class Settings
 {
     public const int CurrentSchemaVersion = 1;
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
+    public bool SetupPromptShown { get; set; }
     public bool CloseToTray { get; set; }
     public bool StartMinimized { get; set; }
     public bool AutoReconnect { get; set; } = true;

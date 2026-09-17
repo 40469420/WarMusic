@@ -15,7 +15,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SizeChanged += (_, _) => ApplyResponsiveLayout(); Title = $"WarMusic · {VersionLabel}"; model = new(); DataContext = model;
-        Loaded += (_, _) => { var handle = new WindowInteropHelper(this).Handle; WindowTheme.Apply(handle); model.AttachHotkeys(handle); if (!Smoke) { CreateTray(); if (model.StartMinimized) Hide(); } };
+        Loaded += (_, _) => { var handle = new WindowInteropHelper(this).Handle; WindowTheme.Apply(handle); model.AttachHotkeys(handle); if (!Smoke) { CreateTray(); if (model.ShouldShowSetup) Dispatcher.BeginInvoke(() => OpenSetup(this, new RoutedEventArgs())); else if (model.StartMinimized) Hide(); } };
         model.OverlayRequested += () => { if (overlay == null) { overlay = new(model); overlay.Closed += (_, _) => overlay = null; overlay.Show(); } else overlay.Close(); };
         Closing += (_, e) => { if (!exiting && (!Smoke || testingTray) && model.CloseToTray) { e.Cancel = true; Hide(); tray?.ShowBalloonTip(2500, "WarMusic is in the tray", "Routing stays active. Right-click the tray icon to open or exit.", System.Windows.Forms.ToolTipIcon.Info); } };
         Closed += (_, _) => { overlay?.Close(); tray?.Dispose(); model.Dispose(); };
@@ -27,6 +27,11 @@ public partial class MainWindow : Window
         model.OverlayCommand.Execute(null); if (overlay == null || !overlay.IsVisible) throw new InvalidOperationException("Overlay did not open."); overlay.UpdateLayout();
         var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)overlay.ActualWidth, (int)overlay.ActualHeight, 96, 96, System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(overlay); var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap)); using (var file = System.IO.File.Create(System.IO.Path.Combine(Store.Root, "docs", "screenshots", "overlay.png"))) encoder.Save(file);
         model.OverlayCommand.Execute(null); if (overlay != null) throw new InvalidOperationException("Overlay did not close.");
+    }
+    void OpenSetup(object sender, RoutedEventArgs e)
+    {
+        var setup = new SetupWindow(model) { Owner = this };
+        setup.ShowDialog();
     }
     void CreateTray()
     {

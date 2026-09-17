@@ -2,6 +2,10 @@
 
 WarMusic mixes a physical microphone, one application's audio, and local clips into a game-compatible virtual microphone.
 
+## 1.0.3 - Quick setup and clearer routing
+
+A four-step setup walks you through your microphone, headphones, virtual cable, and the matching input to select in your game. Choices are saved at the end, and setup can be reopened from the Audio tab. The Soundboard now separates application audio being received, music being enabled or muted, and audio being sent to the cable. Silent sources and headphones-only playback are easier to spot, and the status no longer implies the game is receiving audio before you check its mic test.
+
 ## 1.0.2
 
 - Smaller window and a layout that reflows: the header wraps, and the mixer stacks under the soundboard on a narrow or tall layout.
