@@ -65,14 +65,14 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-results
           path: tests/WarMusic.UnitTests/TestResults/*.trx
           if-no-files-found: warn
 
       - name: Upload portable package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: warmusic-portable
           path: artifacts/WarMusic-0.0.0-ci-win-x64-portable.zip

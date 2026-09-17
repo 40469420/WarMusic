@@ -151,7 +151,7 @@ jobs:
           }
 
       - name: Upload immutable workflow artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: WarMusic-${{ steps.release.outputs.version }}-win-x64
           if-no-files-found: error
