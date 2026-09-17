@@ -305,6 +305,15 @@ public sealed partial class MainViewModel : Observable, IDisposable
         Add("Control+Shift+F7", () => FadeMusic(true)); Add("Control+Shift+F8", () => FadeMusic(false));
         Add(Profile.PanicKey, () => Engine.Panic()); Add(Profile.ToggleKey, () => { if (!Measuring && Profile.TransmitMode == 0) Engine.Toggle(); }); Add(Profile.PlayKey, () => Engine.Pause());
         foreach (var s in Sounds) if (!string.IsNullOrWhiteSpace(s.Hotkey)) { var sound = s; Add(s.Hotkey, () => Engine.Play(sound, false, Profile.Normalize)); }
+        if (string.Equals(settings.OverlayToggleKey, settings.OverlayInteractKey, StringComparison.OrdinalIgnoreCase))
+        {
+            errors.Add("Overlay show/hide and interaction shortcuts must be different. Choose another combination.");
+        }
+        else
+        {
+            Add(settings.OverlayToggleKey, () => OverlayCommand.Execute(null));
+            Add(settings.OverlayInteractKey, () => OverlayInteractCommand.Execute(null));
+        }
         foreach (var key in new[] { Profile.CommsKey, Profile.HoldKey }) try { var parsed = new KeyConverter().ConvertFromInvariantString(key); if (parsed is not Key k || k == Key.None) throw new FormatException(); } catch (Exception ex) when (IsExpectedOperationFailure(ex)) { errors.Add($"'{key}' is not a valid single key. Use a name such as CapsLock or F8."); }
         HotkeyState = errors.Count == 0 ? "Hotkeys registered. Hold/comms keys are observed without intercepting them." : string.Join("\n", errors);
     }
@@ -319,6 +328,7 @@ public sealed partial class MainViewModel : Observable, IDisposable
         if (!seeking) Changed(nameof(Position));
         foreach (var name in new[] { nameof(TrackDetails), nameof(LocalTransport), nameof(CanTogglePlayback), nameof(CanSeek), nameof(LiveMic), nameof(LiveMicStatus) }) Changed(name);
         UpdateRoutingStatus();
+        UpdateOverlayHud();
         Changed(nameof(MusicButtonLabel)); Changed(nameof(IsRouting)); Changed(nameof(SessionLabel)); Changed(nameof(SessionColor));
 
         if (tick % 150 == 0) _ = Recover();
@@ -326,7 +336,7 @@ public sealed partial class MainViewModel : Observable, IDisposable
     }
     public void BeginSeek() => seeking = true;
     public void Seek(double value) { try { Engine.Seek(value); } catch (Exception ex) when (IsExpectedOperationFailure(ex)) { Notice = ex.Message; } finally { seeking = false; } }
-    public void Save() { foreach (var p in Profiles) Store.Sanitize(p); settings.Profiles = Profiles.ToList(); settings.Sounds = Sounds.ToList(); settings.ActiveProfile = Profile.Name; Store.Save(settings); }
+    public void Save() { foreach (var p in Profiles) Store.Sanitize(p); Store.Sanitize(settings); settings.Profiles = Profiles.ToList(); settings.Sounds = Sounds.ToList(); settings.ActiveProfile = Profile.Name; Store.Save(settings); }
     public void Dispose() { disposed = true; importCancellation?.Cancel(); StopRecovery(); timer.Stop(); hotkeys?.Dispose(); Engine.Dispose(); Save(); }
 }
 

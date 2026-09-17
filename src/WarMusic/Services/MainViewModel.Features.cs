@@ -44,6 +44,7 @@ public sealed partial class MainViewModel
         TileCommand = new ActionCommand(p => Safe(() => { if (p is Sound sound) { SelectedSound = sound; Engine.Play(sound, false, Profile.Normalize); } }));
         ColorCommand = Cmd(() => { if (SelectedSound == null) return; string[] colors = ["#566737", "#365E70", "#75483C", "#62507B", "#79632E"]; SelectedSound.Color = colors[(Array.IndexOf(colors, SelectedSound.Color) + 1) % colors.Length]; Save(); });
         ExportCommand = new ActionCommand(async _ => await Export()); RestoreCommand = new ActionCommand(async _ => await Restore());
+        InitializeOverlay();
     }
     public async Task Ready()
     {

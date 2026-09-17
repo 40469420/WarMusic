@@ -62,6 +62,12 @@ public class Settings
     public bool AutoReconnect { get; set; } = true;
     public float FadeSeconds { get; set; } = 2;
     public double OverlayLeft { get; set; } = 80; public double OverlayTop { get; set; } = 80;
+    public double OverlayWidth { get; set; } = 312;
+    public double OverlayHeight { get; set; } = 268;
+    public double OverlayOpacity { get; set; } = .78;
+    public bool OverlayExpanded { get; set; }
+    public string OverlayToggleKey { get; set; } = "Control+Shift+O";
+    public string OverlayInteractKey { get; set; } = "Control+Shift+I";
     public string ActiveProfile { get; set; } = "Default";
     public List<Profile> Profiles { get; set; } = [new(), new() { Name = "Arma" }, new() { Name = "Wardogs" }];
     public List<Sound> Sounds { get; set; } = [];

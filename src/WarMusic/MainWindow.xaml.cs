@@ -16,7 +16,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         SizeChanged += (_, _) => ApplyResponsiveLayout(); Title = $"WarMusic · {VersionLabel}"; model = new(); DataContext = model;
         Loaded += (_, _) => { var handle = new WindowInteropHelper(this).Handle; WindowTheme.Apply(handle); model.AttachHotkeys(handle); if (!Smoke) { CreateTray(); if (model.ShouldShowSetup) Dispatcher.BeginInvoke(() => OpenSetup(this, new RoutedEventArgs())); else if (model.StartMinimized) Hide(); } };
-        model.OverlayRequested += () => { if (overlay == null) { overlay = new(model); overlay.Closed += (_, _) => overlay = null; overlay.Show(); } else overlay.Close(); };
+        model.OverlayRequested += ToggleOverlay;
+        model.OverlayShown += EnsureOverlay;
         Closing += (_, e) => { if (!exiting && (!Smoke || testingTray) && model.CloseToTray) { e.Cancel = true; Hide(); tray?.ShowBalloonTip(2500, "WarMusic is in the tray", "Routing stays active. Right-click the tray icon to open or exit.", System.Windows.Forms.ToolTipIcon.Info); } };
         Closed += (_, _) => { overlay?.Close(); tray?.Dispose(); model.Dispose(); };
     }
@@ -25,7 +26,19 @@ public partial class MainWindow : Window
         bool prior = model.CloseToTray; CreateTray(); testingTray = true; model.CloseToTray = true; Close(); if (IsVisible) throw new InvalidOperationException("Close-to-tray failed."); OpenWindow(); if (!IsVisible) throw new InvalidOperationException("Tray restore failed."); testingTray = false; model.CloseToTray = prior;
 
         model.OverlayCommand.Execute(null); if (overlay == null || !overlay.IsVisible) throw new InvalidOperationException("Overlay did not open."); overlay.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)overlay.ActualWidth, (int)overlay.ActualHeight, 96, 96, System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(overlay); var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap)); using (var file = System.IO.File.Create(System.IO.Path.Combine(Store.Root, "docs", "screenshots", "overlay.png"))) encoder.Save(file);
+        if (!overlay.ClickThroughEnabled) throw new InvalidOperationException("Locked overlay was not click-through.");
+        if (overlay.LockButton.Command != model.OverlayInteractCommand || !overlay.LockButton.IsEnabled) throw new InvalidOperationException("Lock chip was not clickable while locked.");
+        CaptureOverlay("overlay.png");
+        model.OverlayExpanded = true; overlay.ApplyLayout(); overlay.UpdateLayout();
+        CaptureOverlay("overlay-expanded.png");
+        overlay.LockButton.Command.Execute(null); overlay.ApplyClickThrough(); overlay.UpdateLayout();
+        if (!model.OverlayInteractive || overlay.ClickThroughEnabled) throw new InvalidOperationException("Lock chip did not unlock the overlay.");
+        CaptureOverlay("overlay-unlocked.png");
+        model.LockOverlayCommand.Execute(null); overlay.ApplyClickThrough(); overlay.UpdateLayout();
+        if (model.OverlayInteractive || !overlay.ClickThroughEnabled) throw new InvalidOperationException("Tray lock did not restore click-through.");
+        model.UnlockOverlayCommand.Execute(null); overlay.ApplyClickThrough();
+        model.LockOverlay(); overlay.ApplyClickThrough();
+        if (!overlay.ClickThroughEnabled) throw new InvalidOperationException("Escape lock path did not restore click-through.");
         model.OverlayCommand.Execute(null); if (overlay != null) throw new InvalidOperationException("Overlay did not close.");
     }
     void OpenSetup(object sender, RoutedEventArgs e)
@@ -41,11 +54,38 @@ public partial class MainWindow : Window
         menu.Items.Add("Ready (music muted)", null, (_, _) => Dispatcher.Invoke(() => model.ReadyCommand.Execute(null)));
         menu.Items.Add("Enable / mute music", null, (_, _) => Dispatcher.Invoke(() => model.ToggleCommand.Execute(null)));
         menu.Items.Add("Show / hide overlay", null, (_, _) => Dispatcher.Invoke(() => model.OverlayCommand.Execute(null)));
+        menu.Items.Add("Unlock overlay", null, (_, _) => Dispatcher.Invoke(() => model.UnlockOverlayCommand.Execute(null)));
+        menu.Items.Add("Lock overlay", null, (_, _) => Dispatcher.Invoke(() => model.LockOverlayCommand.Execute(null)));
         menu.Items.Add("Panic · cut music", null, (_, _) => Dispatcher.Invoke(() => model.PanicCommand.Execute(null)));
         menu.Items.Add("Exit WarMusic", null, (_, _) => Dispatcher.Invoke(() => { exiting = true; Close(); }));
         tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => Dispatcher.Invoke(OpenWindow);
     }
     void OpenWindow() { Show(); WindowState = WindowState.Normal; Activate(); }
+    void ToggleOverlay() { if (overlay == null) EnsureOverlay(); else overlay.Close(); }
+    void EnsureOverlay()
+    {
+        if (overlay != null)
+        {
+            overlay.ApplyClickThrough();
+            return;
+        }
+
+        overlay = new OverlayWindow(model);
+        overlay.Closed += (_, _) => overlay = null;
+        overlay.Show();
+        overlay.ApplyClickThrough();
+    }
+    void CaptureOverlay(string name)
+    {
+        if (overlay == null) throw new InvalidOperationException("Overlay was missing during capture.");
+        overlay.UpdateLayout();
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(Math.Max(1, (int)overlay.ActualWidth), Math.Max(1, (int)overlay.ActualHeight), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(overlay);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var file = System.IO.File.Create(System.IO.Path.Combine(Store.Root, "docs", "screenshots", name));
+        encoder.Save(file);
+    }
     protected override void OnSourceInitialized(EventArgs e) { base.OnSourceInitialized(e); WindowTheme.Apply(new WindowInteropHelper(this).Handle); }
     void ApplyResponsiveLayout()
     {

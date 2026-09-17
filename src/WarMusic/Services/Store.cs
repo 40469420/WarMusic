@@ -105,6 +105,8 @@ public static class Store
                 Sanitize(profile);
             }
 
+            Sanitize(settings);
+
             if (storedVersion < Settings.CurrentSchemaVersion)
             {
                 Preserve(path, $"pre-v{Settings.CurrentSchemaVersion}");
@@ -148,6 +150,25 @@ public static class Store
             {
                 File.Delete(temporary);
             }
+        }
+    }
+
+    public static void Sanitize(Settings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        settings.OverlayLeft = double.IsFinite(settings.OverlayLeft) ? settings.OverlayLeft : OverlayPlacement.DefaultLeft;
+        settings.OverlayTop = double.IsFinite(settings.OverlayTop) ? settings.OverlayTop : OverlayPlacement.DefaultTop;
+        settings.OverlayWidth = OverlayPlacement.ClampWidth(settings.OverlayWidth);
+        settings.OverlayHeight = OverlayPlacement.ClampHeight(settings.OverlayHeight);
+        settings.OverlayOpacity = OverlayPlacement.ClampOpacity(settings.OverlayOpacity);
+        if (string.IsNullOrWhiteSpace(settings.OverlayToggleKey))
+        {
+            settings.OverlayToggleKey = OverlayPlacement.DefaultToggleKey;
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.OverlayInteractKey))
+        {
+            settings.OverlayInteractKey = OverlayPlacement.DefaultInteractKey;
         }
     }
 
